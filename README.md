@@ -23,3 +23,4 @@
 ## e) Diseñar una interfaz gráfica que permita visualizar el estado del sistema y los eventos registrados.
 
 ## f) Integrar físicamente el sistema mediante una PCB o tarjeta universal soldada para la construcción del prototipo funcional.
+    
