@@ -1,0 +1,105 @@
+2025-08-30 18:29:54 - logGUI - INFO - init GUI[0m
+2025-08-30 18:29:55 - logCamera - INFO - Init constructor RunCamera[0m
+2025-08-30 18:29:56 - logCamera - INFO - Creating Thread in start camera[0m
+2025-08-30 18:29:59 - logCamera - WARNING - Frame vacío en RunCamera.get()[0m
+2025-08-30 18:30:11 - logGUI - INFO - init GUI[0m
+2025-08-30 18:30:12 - logCamera - INFO - Init constructor RunCamera[0m
+2025-08-30 18:30:13 - logCamera - INFO - Creating Thread in start camera[0m
+2025-08-30 18:30:16 - logCamera - WARNING - Frame vacío en RunCamera.get()[0m
+2025-08-30 18:32:26 - logGUI - INFO - init GUI[0m
+2025-08-30 18:32:28 - logCamera - INFO - Init constructor RunCamera[0m
+2025-08-30 18:32:29 - logCamera - INFO - Creating Thread in start camera[0m
+2025-08-30 18:32:32 - logCamera - WARNING - Frame vacío en RunCamera.get()[0m
+2025-08-30 18:32:49 - logGUI - INFO - init GUI[0m
+2025-08-30 18:32:50 - logCamera - INFO - Init constructor RunCamera[0m
+2025-08-30 18:32:51 - logCamera - INFO - Creating Thread in start camera[0m
+2025-08-30 18:32:54 - logCamera - WARNING - Frame vacío en RunCamera.get() o video terminado[0m
+2025-09-05 22:01:56 - logGUI - INFO - init GUI[0m
+2025-09-05 22:01:58 - logCamera - INFO - Init constructor RunCamera[0m
+2025-09-05 22:01:59 - logCamera - INFO - Creating Thread in start camera[0m
+2025-09-05 22:02:02 - logCamera - WARNING - Frame vacío en RunCamera.get() o video terminado[0m
+2026-05-02 22:33:55 - logGUI - INFO - init GUI[0m
+2026-05-02 22:36:06 - logGUI - INFO - init GUI[0m
+2026-05-02 22:36:27 - logGUI - INFO - init GUI[0m
+2026-05-02 22:37:13 - logGUI - INFO - init GUI[0m
+2026-05-02 22:38:07 - logGUI - INFO - init GUI[0m
+2026-05-02 22:38:33 - logGUI - INFO - init GUI[0m
+2026-05-02 22:39:08 - logGUI - INFO - init GUI[0m
+2026-05-02 22:39:35 - logGUI - INFO - init GUI[0m
+2026-05-02 22:40:01 - logCamera - INFO - Init constructor RunCamera[0m
+2026-05-02 22:40:09 - logCamera - INFO - Creating Thread in start camera[0m
+2026-05-02 22:40:09 - logCamera - INFO - Init constructor RunCamera[0m
+2026-05-02 22:40:16 - logCamera - INFO - Creating Thread in start camera[0m
+2026-05-02 22:41:38 - logGUI - INFO - init GUI[0m
+2026-05-02 22:46:38 - logGUI - INFO - init GUI[0m
+2026-05-02 22:46:57 - logGUI - INFO - init GUI[0m
+2026-05-02 22:48:43 - logGUI - INFO - init GUI[0m
+2026-05-02 22:53:15 - logGUI - INFO - init GUI[0m
+2026-05-02 22:56:14 - logGUI - INFO - init GUI[0m
+2026-05-02 23:15:04 - logGUI - INFO - init GUI[0m
+2026-05-02 23:27:25 - logGUI - INFO - init GUI[0m
+2026-05-02 23:28:27 - logGUI - INFO - init GUI[0m
+2026-05-02 23:30:16 - logGUI - INFO - init GUI[0m
+2026-05-02 23:30:31 - logGUI - INFO - init GUI[0m
+2026-05-02 23:31:09 - logGUI - INFO - init GUI[0m
+2026-05-02 23:32:28 - logGUI - INFO - init GUI[0m
+2026-05-02 23:32:52 - logGUI - INFO - init GUI[0m
+2026-05-02 23:34:13 - logGUI - INFO - init GUI[0m
+2026-05-02 23:35:01 - logGUI - INFO - init GUI[0m
+2026-05-02 23:35:34 - logGUI - INFO - init GUI[0m
+2026-05-02 23:38:26 - logGUI - INFO - init GUI[0m
+2026-05-02 23:39:05 - logGUI - INFO - init GUI[0m
+2026-05-02 23:39:23 - logGUI - INFO - init GUI[0m
+2026-05-02 23:40:13 - logGUI - INFO - init GUI[0m
+2026-05-02 23:41:51 - logGUI - INFO - init GUI[0m
+2026-05-02 23:42:32 - logGUI - INFO - init GUI[0m
+2026-05-02 23:43:09 - logGUI - INFO - init GUI[0m
+2026-05-02 23:45:09 - logGUI - INFO - init GUI[0m
+2026-05-02 23:48:05 - logGUI - INFO - init GUI[0m
+2026-05-02 23:48:57 - logGUI - INFO - init GUI[0m
+2026-05-02 23:49:14 - logGUI - INFO - init GUI[0m
+2026-05-02 23:50:23 - logGUI - INFO - init GUI[0m
+2026-05-02 23:50:52 - logGUI - INFO - init GUI[0m
+2026-05-02 23:51:16 - logGUI - INFO - init GUI[0m
+2026-05-02 23:51:59 - logGUI - INFO - init GUI[0m
+2026-05-02 23:52:44 - logGUI - INFO - init GUI[0m
+2026-05-02 23:53:21 - logGUI - INFO - init GUI[0m
+2026-05-02 23:53:38 - logGUI - INFO - init GUI[0m
+2026-05-02 23:53:48 - logGUI - INFO - init GUI[0m
+2026-05-02 23:54:24 - logGUI - INFO - init GUI[0m
+2026-05-02 23:54:44 - logGUI - INFO - init GUI[0m
+2026-05-02 23:56:30 - logGUI - INFO - init GUI[0m
+2026-05-02 23:57:07 - logGUI - INFO - init GUI[0m
+2026-05-02 23:57:28 - logGUI - INFO - init GUI[0m
+2026-05-02 23:58:45 - logGUI - INFO - init GUI[0m
+2026-05-02 23:59:31 - logGUI - INFO - init GUI[0m
+2026-05-03 00:00:13 - logGUI - INFO - init GUI[0m
+2026-05-03 00:00:29 - logGUI - INFO - init GUI[0m
+2026-05-03 00:00:49 - logGUI - INFO - init GUI[0m
+2026-05-03 00:02:02 - logGUI - INFO - init GUI[0m
+2026-05-03 00:02:11 - logGUI - INFO - init GUI[0m
+2026-05-03 00:02:31 - logGUI - INFO - init GUI[0m
+2026-05-03 00:02:59 - logGUI - INFO - init GUI[0m
+2026-05-03 00:03:57 - logGUI - INFO - init GUI[0m
+2026-05-03 00:04:38 - logGUI - INFO - init GUI[0m
+2026-05-03 00:05:19 - logGUI - INFO - init GUI[0m
+2026-05-03 00:06:05 - logGUI - INFO - init GUI[0m
+2026-05-03 00:07:02 - logGUI - INFO - init GUI[0m
+2026-05-03 00:07:39 - logGUI - INFO - init GUI[0m
+2026-05-03 00:08:42 - logGUI - INFO - init GUI[0m
+2026-05-03 00:10:11 - logGUI - INFO - init GUI[0m
+2026-05-03 00:10:44 - logGUI - INFO - init GUI[0m
+2026-05-03 00:11:08 - logGUI - INFO - init GUI[0m
+2026-05-03 00:11:27 - logGUI - INFO - init GUI[0m
+2026-05-03 00:11:43 - logGUI - INFO - init GUI[0m
+2026-05-03 00:11:51 - logGUI - INFO - init GUI[0m
+2026-05-03 00:12:33 - logGUI - INFO - init GUI[0m
+2026-05-03 00:12:51 - logGUI - INFO - init GUI[0m
+2026-05-03 00:14:01 - logGUI - INFO - init GUI[0m
+2026-05-03 00:21:17 - logGUI - INFO - init GUI[0m
+2026-05-03 00:28:00 - logGUI - INFO - init GUI[0m
+2026-05-03 00:28:40 - logGUI - INFO - init GUI[0m
+2026-05-03 00:29:21 - logGUI - INFO - init GUI[0m
+2026-05-03 00:29:35 - logGUI - INFO - init GUI[0m
+2026-05-03 00:29:54 - logGUI - INFO - init GUI[0m
+2026-05-03 00:30:23 - logGUI - INFO - init GUI[0m
