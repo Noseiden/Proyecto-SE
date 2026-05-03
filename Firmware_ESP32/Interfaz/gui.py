@@ -6,6 +6,8 @@ from tkinter import ttk
 import cv2 #pip install opencv-python
 import camera
 import numpy as np
+import serial #Para comunicación con lenguaje C de la ESP32
+ser = serial.Serial('COM9', 115200, timeout=1) #RECORDAR CAMBIAR COM DEPENDIENDO DE DÓNDE ESTÉ CONECTADO ESP32
 
 class Application(ttk.Frame):
     def __init__(self, master=None): #Todo lo gráfico irá en el master
@@ -15,12 +17,16 @@ class Application(ttk.Frame):
         self.logReport.logger.info("init GUI")
         self.frame = None
         self.imgTk = None # Video
+        self.step = 0 #Pasos para dar en los eje X, Y, Z
         self.master = master
 
         self.master.attributes("-fullscreen", True)
         self.master.bind("<Escape>", lambda e: self.master.attributes("-fullscreen", False))
+
+        self.camera_1 = camera.RunCamera() # Ruta del video, () se obtiene la cámara por defecto
+        self.camera_1.start() #start de camera.py
         
-        self.widgetText("CONTROL DE LA CNC", 15, 10, 10) # Texto
+        self.widgetText("CONTROL DE LA CNC", 20, 10, 10) # Texto
         self.createFrame(10, 50, 750, 450) # Recuadro para el video
         self.createButton("Start", 10, 4, 15, 15, 550)
         self.createButton("Pause", 10, 4, 15, 215, 550)
@@ -41,6 +47,11 @@ class Application(ttk.Frame):
 
         self.widgetText("ERROR: ", 15, 800, 645) 
         
+        self.labelStep = self.widgetText(f"Step: {self.step}", 12, 970, 430)
+        self.widgetText("mm/min ", 10, 1040, 432)
+
+        self.showVideo()
+        print("Start Video")
 
         self.master.mainloop()
     
@@ -65,17 +76,16 @@ class Application(ttk.Frame):
         self.fontLabelText = font.Font(
             family='Helvetica', size = sz, weight = 'bold' #Fuente para el texto
         )
-        self.labelNameCamera = tk.Label(
-            self.master, text = title, fg = '#000000'
-        )
-        self.labelNameCamera['font'] = self.fontLabelText
-        self.labelNameCamera.place(x=xpos, y=ypos)
+        label = tk.Label(self.master, text = title, fg = '#000000')
+        label['font'] = self.fontLabelText
+        label.place(x=xpos, y=ypos)
+        return label #Para mostrar valores, como el paso (step)
 
     def createButton(self, whichone, w, h, sz, posx, posy):
         # Botones:
         match whichone:
             case "Start":
-                self.btnInitCamera = tk.Button(
+                self.btnStart = tk.Button(
                     self.master,
                     text="START",
                     bg = '#007A39',
@@ -83,11 +93,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Startpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy) #Lugar del botón dependiendo del tamaño de la resolución dada width and height
+                self.btnStart.place(x=posx, y=posy) #Lugar del botón dependiendo del tamaño de la resolución dada width and height
             case "Pause":
-                self.btnInitCamera = tk.Button(
+                self.btnPause = tk.Button(
                     self.master,
                     text="PAUSE",
                     bg = "#C97601",
@@ -95,11 +105,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Pausepressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnPause.place(x=posx, y=posy)
             case "Stop":
-                self.btnInitCamera = tk.Button(
+                self.btnStop = tk.Button(
                     self.master,
                     text="STOP",
                     bg = "#950707",
@@ -107,11 +117,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Stoppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnStop.place(x=posx, y=posy)
             case "Reset":
-                self.btnInitCamera = tk.Button(
+                self.btnReset = tk.Button(
                     self.master,
                     text="RESET",
                     bg = "#1C12A0",
@@ -119,11 +129,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Resetpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnReset.place(x=posx, y=posy)
             case "+X":
-                self.btnInitCamera = tk.Button(
+                self.btnXp = tk.Button(
                     self.master,
                     text="+ X",
                     bg = "#000000",
@@ -131,11 +141,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Xppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnXp.place(x=posx, y=posy)
             case "-X":
-                self.btnInitCamera = tk.Button(
+                self.btnXm = tk.Button(
                     self.master,
                     text="- X",
                     bg = "#000000",
@@ -143,11 +153,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Xmpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnXm.place(x=posx, y=posy)
             case "+Y":
-                self.btnInitCamera = tk.Button(
+                self.btnYp = tk.Button(
                     self.master,
                     text="+ Y",
                     bg = "#000000",
@@ -155,11 +165,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Yppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnYp.place(x=posx, y=posy)
             case "-Y":
-                self.btnInitCamera = tk.Button(
+                self.btnYm = tk.Button(
                     self.master,
                     text="- Y",
                     bg = "#000000",
@@ -167,11 +177,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Ympressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnYm.place(x=posx, y=posy)
             case "+Z":
-                self.btnInitCamera = tk.Button(
+                self.btnZp = tk.Button(
                     self.master,
                     text="+ Z",
                     bg = "#000000",
@@ -179,11 +189,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Zppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnZp.place(x=posx, y=posy)
             case "-Z":
-                self.btnInitCamera = tk.Button(
+                self.btnZm = tk.Button(
                     self.master,
                     text="- Z",
                     bg = "#000000",
@@ -191,11 +201,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Zmpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnZm.place(x=posx, y=posy)
             case "+step":
-                self.btnInitCamera = tk.Button(
+                self.btnStepp = tk.Button(
                     self.master,
                     text="+ STEP",
                     bg = "#762E01",
@@ -203,11 +213,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Stepppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnStepp.place(x=posx, y=posy)
             case "-step":
-                self.btnInitCamera = tk.Button(
+                self.btnStepm = tk.Button(
                     self.master,
                     text="- STEP",
                     bg = "#762E01",
@@ -215,11 +225,11 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Stepmpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnStepm.place(x=posx, y=posy)
             case "origin":
-                self.btnInitCamera = tk.Button(
+                self.btnO = tk.Button(
                     self.master,
                     text="O",
                     bg = "#5F5F5F",
@@ -227,20 +237,77 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"), 
-                    command = self.initCamera #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
+                    command = self.Opressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
-                self.btnInitCamera.place(x=posx, y=posy)
+                self.btnO.place(x=posx, y=posy)
 
-    def initCamera(self):
-        self.camera_1 = camera.RunCamera() # Ruta del video, () se obtiene la cámara por defecto
-        self.camera_1.start() #start de camera.py
-        self.showVideo()
-        print("Start Camera 1")
+    def Startpressed(self):
+        ser.write(b"START\n")
+        print("Orden de inicio enviada a ESP32")
+        self.btnStart.config(state=tk.DISABLED)
+        self.btnStop.config(state=tk.NORMAL)
+        self.btnPause.config(state=tk.NORMAL)
+        self.btnReset.config(state=tk.NORMAL)
+    def Pausepressed(self):
+        ser.write(b"PAUSE\n")
+        print("Orden de pausa enviada a ESP32")
+        self.btnStart.config(state=tk.NORMAL)
+        self.btnStop.config(state=tk.NORMAL)
+        self.btnPause.config(state=tk.DISABLED)
+        self.btnReset.config(state=tk.NORMAL)
+    def Stoppressed(self):
+        ser.write(b"STOP\n")
+        print("Orden de paro enviada a ESP32")
+        self.btnStart.config(state=tk.NORMAL)
+        self.btnStop.config(state=tk.DISABLED)
+        self.btnPause.config(state=tk.NORMAL)
+        self.btnReset.config(state=tk.NORMAL)
+    def Resetpressed(self):
+        ser.write(b"RESET\n")
+        print("Orden de reset enviada a ESP32")
+        self.btnStart.config(state=tk.NORMAL)
+        self.btnStop.config(state=tk.NORMAL)
+        self.btnPause.config(state=tk.NORMAL)
+        self.btnReset.config(state=tk.DISABLED)
+    def Zppressed(self):
+        ser.write(b"Zp\n")
+        print("Orden de + Z enviada a ESP32")
+    def Zmpressed(self):
+        ser.write(b"Zm\n")
+        print("Orden de - Z enviada a ESP32")
+    def Xppressed(self):
+        ser.write(b"Xp\n")
+        print("Orden de + X enviada a ESP32")
+    def Xmpressed(self):
+        ser.write(b"Xm\n")
+        print("Orden de - X enviada a ESP32")
+    def Yppressed(self):
+        ser.write(b"Yp\n")
+        print("Orden de + Y enviada a ESP32")
+    def Ympressed(self):
+        ser.write(b"Ym\n")
+        print("Orden de - Y enviada a ESP32")
+    def Stepppressed(self):
+        self.step += 1 #mm
+        self.labelStep.config(text=f"Step: {self.step}") #Actualizar el valor mostrado en GUI        
+        mensaje = f"STEP:{self.step}\n"
+        ser.write(mensaje.encode('utf-8')) #Lo codificamos a bytes y lo enviamos
+        print(f"Step enviado a ESP32: {mensaje.strip()}")
+    def Stepmpressed(self):
+        if self.step > 0:
+            self.step -= 1 #mm
+            self.labelStep.config(text=f"Step: {self.step}") #Actualizar el valor mostrado en GUI
+            mensaje = f"STEP:{self.step}\n"
+            ser.write(mensaje.encode('utf-8')) #Lo codificamos a bytes y lo enviamos
+            print(f"Step enviado a ESP32: {mensaje.strip()}")
+    def Opressed(self):
+        ser.write(b"ORIGIN\n")
+        print("Orden de origen enviada a ESP32")
     
         
     def showVideo(self): #Actualiza cada frame para mostrar video continuo
         if(self.camera_1.frame is not None):
-            imgresize = cv2.resize(self.camera_1.frame, (500, 500))
+            imgresize = cv2.resize(self.camera_1.frame, (750, 450))
             imgTk = self.convertToFrameTk(1, imgresize) # Ventana convertida a Tkinter 
             self.labelVideo_1.configure(image=imgTk) #Imágenes a color del mismo tamaño de imgTk
             self.labelVideo_1.image = imgTk
