@@ -4,62 +4,146 @@
 #include "router_spindle.h"
 #include "rtc_ds1307.h"
 
+#include <math.h>
+#include <stdint.h>
+#include <string.h> //para los caracteres
 #include <stdio.h>
+#include <stdlib.h> //Para atoi() --> ASCII to integer
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_log.h"
+#include "driver/gpio.h"
+#include "driver/uart.h" //Comunicación serial UART, para conectarse con botones de GUI
 
-typedef enum { // Definición de estados
+#define UART_PORT UART_NUM_0 //Comunicación UART por USB ESP32 con computador
+
+int step_mm = 0;
+
+typedef enum { //botones de GUI
+    CMD_NONE, 
+    CMD_START, 
+    CMD_PAUSE, 
+    CMD_STOP, 
+    CMD_RESET, 
+    CMD_ORIGIN, 
+    CMD_JOG_XP,
+    CMD_JOG_XM,
+    CMD_JOG_YP,
+    CMD_JOG_YM,
+    CMD_JOG_ZP,
+    CMD_JOG_ZM,
+} gui_command_t;
+volatile gui_command_t last_command = CMD_NONE; //volátil porque puede cambiar en interrupciones
+
+typedef enum { //Estados
     STATE_INIT,
     STATE_IDLE,
     STATE_JOG,
     STATE_RUNNING,
-    STATE_FEED_HOLD,
+    STATE_PAUSE,
     STATE_ALARM
 } cnc_state_t;
-
-// Variable global de estado (volátil porque puede cambiar en interrupciones)
 volatile cnc_state_t current_state = STATE_INIT;
 
 float pos_x = 0, pos_y = 0, pos_z = 0;
-float step = 1.0;
 
-void procesar_comando_gui(char* comando) {  //Recepción de los botones de la interfaz (GUI) 
-    // Ejemplo de lógica para los botones:
-    if (strcmp(comando, "START") == 0 && (current_state == STATE_IDLE || current_state == STATE_FEED_HOLD)) {
-        current_state = STATE_RUNNING;
-    } 
-    
-    else if (strcmp(comando, "FEED_HOLD") == 0 && current_state == STATE_RUNNING) {
-        current_state = STATE_FEED_HOLD;
-    }
-
-    else if (strcmp(comando, "STOP") == 0) {
-        current_state = STATE_ALARM;
-    }
-
-    else if (strcmp(comando, "RESET") == 0) {
-        current_state = STATE_IDLE;
-        ESP_LOGI("CNC", "Alarma liberada.");
-    }
-
-    else if (strcmp(comando, "SET_ORIGIN") == 0 && current_state == STATE_IDLE) {
-        pos_x = 0; pos_y = 0; pos_z = 0;
-        ESP_LOGI("CNC", "Origen establecido en (0,0,0)");
-        // Aquí llamarías a tu función de logging del DS1307
-    }
-
-    else if (strstr(comando, "JOG") != NULL && current_state == STATE_IDLE) {
-        current_state = STATE_JOG;
+void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para cambio de estado
+    uint8_t data[128];
+    while(1){
+        int len = uart_read_bytes(UART_PORT, data, sizeof(data) - 1, 20 / portTICK_PERIOD_MS);
+        if (len > 0) {
+            data[len] = '\0'; // Convertimos a string de C
+            char *p_step = strstr((char*)data, "Step:");
+            // Comparamos lo recibido con las palabras clave de botones
+            if (p_step != NULL){
+                sscanf(p_step, "Step:%d", &step_mm); // Con sscanf, busca en Step: un número entero(%d) para llevarlo a step_mm
+                //char confirm[50]; //buffer con espacio en memoria
+                //int msg = sprintf(confirm, "CONF_STEP:%d mm/min\n", step_mm);
+                //uart_write_bytes(UART_PORT, confirm, msg);
+            } else if (strstr((char*)data, "START"))  last_command = CMD_START;
+            else if (strstr((char*)data, "PAUSE"))  last_command = CMD_PAUSE;
+            else if (strstr((char*)data, "STOP"))   last_command = CMD_STOP;
+            else if (strstr((char*)data, "RESET"))  last_command = CMD_RESET;
+            else if (strstr((char*)data, "Zp"))     last_command = CMD_JOG_ZP;
+            else if (strstr((char*)data, "Zm"))     last_command = CMD_JOG_ZM;
+            else if (strstr((char*)data, "Xp"))     last_command = CMD_JOG_XP;
+            else if (strstr((char*)data, "Xm"))     last_command = CMD_JOG_XM;
+            else if (strstr((char*)data, "Yp"))     last_command = CMD_JOG_YP;
+            else if (strstr((char*)data, "Ym"))     last_command = CMD_JOG_YM;
+            else if (strstr((char*)data, "ORIGIN")) last_command = CMD_ORIGIN;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10)); //Para evitar WatchDog
     }
 }
 
 void app_main(void) {
+    uart_config_t uart_config = {
+        .baud_rate = 115200,  //poner en platformio.ini --> monitor_speed = 9600, es decir, velocidad del computador debe ser la misma del ESP32
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_DEFAULT
+    };
+    uart_param_config(UART_PORT, &uart_config); // & para mandar de una vez comox pointer
+    uart_driver_install(UART_PORT, 1024, 1024, 0, NULL, 0);
+    
+
+    xTaskCreate(task_receive_gui, "GUI_Task", 4096, NULL, 5, NULL); //para que FreeRTOS identifique la tarea 
     while (1) {
+        if (last_command != CMD_NONE) {
+            switch(last_command) {
+                case CMD_START: current_state = STATE_RUNNING; break;
+                case CMD_PAUSE: current_state = STATE_PAUSE; break;
+                case CMD_RESET: current_state = STATE_IDLE; break;
+                case CMD_STOP:  current_state = STATE_ALARM; break;
+                case CMD_ORIGIN: 
+                    if(current_state == STATE_IDLE) {
+                        pos_x = 0; pos_y = 0; pos_z = 0; 
+                    }
+                    break;
+                case CMD_JOG_XP: 
+                    if(current_state == STATE_IDLE) {
+                        current_state = STATE_JOG; 
+                        pos_x += step_mm; 
+                    }
+                    break;
+                case CMD_JOG_XM: 
+                    if(current_state == STATE_IDLE) {
+                        current_state = STATE_JOG; 
+                        pos_x -= step_mm; 
+                    }
+                    break;
+                case CMD_JOG_YP: 
+                    if(current_state == STATE_IDLE) {
+                        current_state = STATE_JOG; 
+                        pos_y += step_mm; 
+                    }
+                    break;
+                case CMD_JOG_YM: 
+                    if(current_state == STATE_IDLE) {
+                        current_state = STATE_JOG; 
+                        pos_y -= step_mm; 
+                    }
+                    break;
+                case CMD_JOG_ZP: 
+                    if(current_state == STATE_IDLE) {
+                        current_state = STATE_JOG; 
+                        pos_z += step_mm; 
+                    }
+                    break;
+                case CMD_JOG_ZM: 
+                    if(current_state == STATE_IDLE) {
+                        current_state = STATE_JOG; 
+                        pos_z -= step_mm; 
+                    }
+                    break;
+            }
+            last_command = CMD_NONE; //Reset del comando después de procesarlo
+        }
         switch (current_state) {
             case STATE_INIT:
-                ESP_LOGI("CNC", "Iniciando sistema...");
-                // Aquí llamarías a motores_init(), rtc_init(), etc.
+                // motores_init(), rtc_init(), etc.
                 current_state = STATE_IDLE;
                 break;
 
@@ -69,7 +153,6 @@ void app_main(void) {
                 break;
 
             case STATE_JOG:
-                ESP_LOGI("CNC", "Moviendo eje a paso: %.2f", step);
                 // motores_mover(eje, jog_step); 
                 current_state = STATE_IDLE; 
                 break;
@@ -78,7 +161,7 @@ void app_main(void) {
                 // Si hay un error de sensor o botón Stop -> current_state = STATE_ALARM;
                 break;
 
-            case STATE_FEED_HOLD:
+            case STATE_PAUSE:
                 // Detener motores pero mantener ruteadora encendida
                 // motores_stop_gradual();
                 break;
@@ -87,9 +170,8 @@ void app_main(void) {
                 // BLOQUEO TOTAL: Apagar ruteadora y motores
                 // ruteadora_off();
                 // motores_disable();
-                ESP_LOGE("CNC", "SISTEMA BLOQUEADO - REQUIERE RESET");
                 break;
         }
-        vTaskDelay(pdMS_TO_TICKS(10)); // Pequeña espera para no saturar CPU
+        vTaskDelay(pdMS_TO_TICKS(20)); // Pequeña espera para no saturar CPU
     }
 }
