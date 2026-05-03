@@ -1,21 +1,9 @@
+#include "system_lib.h" //Tiene librerías necesarias de C y PlatformIO, así como también los pines GPIO
 #include "current_sensor.h"
 #include "logging.h"
 #include "motors.h"
 #include "router_spindle.h"
 #include "rtc_ds1307.h"
-
-#include <math.h>
-#include <stdint.h>
-#include <string.h> //para los caracteres
-#include <stdio.h>
-#include <stdlib.h> //Para atoi() --> ASCII to integer
-#include <inttypes.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "driver/gpio.h"
-#include "driver/uart.h" //Comunicación serial UART, para conectarse con botones de GUI
-
-#define UART_PORT UART_NUM_0 //Comunicación UART por USB ESP32 con computador
 
 int step_mm = 0;
 
@@ -88,9 +76,11 @@ void app_main(void) {
     uart_param_config(UART_PORT, &uart_config); // & para mandar de una vez comox pointer
     uart_driver_install(UART_PORT, 1024, 1024, 0, NULL, 0);
     
+    I_sensor_init(); //Configuración ADC de los sensores de corriente
 
     xTaskCreate(task_receive_gui, "GUI_Task", 4096, NULL, 5, NULL); //para que FreeRTOS identifique la tarea 
     while (1) {
+        
         if (last_command != CMD_NONE) {
             switch(last_command) {
                 case CMD_START: current_state = STATE_RUNNING; break;
