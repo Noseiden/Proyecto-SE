@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h> //para los caracteres
 #include <stdio.h>
+#include <stdarg.h> //Para el logging
 #include <stdlib.h> //Para atoi() --> ASCII to integer
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"

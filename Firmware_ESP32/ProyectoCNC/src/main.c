@@ -77,11 +77,11 @@ void app_main(void) {
     uart_driver_install(UART_PORT, 1024, 1024, 0, NULL, 0);
     
     I_sensor_init(); //Configuración ADC de los sensores de corriente
-
+    consumo_cnc_t corrientes_actuales;
+    cnc_state_t last_reported_state = -1;
     xTaskCreate(task_receive_gui, "GUI_Task", 4096, NULL, 5, NULL); //para que FreeRTOS identifique la tarea 
     while (1) {
-        
-        if (last_command != CMD_NONE) {
+        if (last_command != CMD_NONE) { //Las transiciones a cada estado
             switch(last_command) {
                 case CMD_START: current_state = STATE_RUNNING; break;
                 case CMD_PAUSE: current_state = STATE_PAUSE; break;
@@ -128,39 +128,68 @@ void app_main(void) {
                         pos_z -= step_mm; 
                     }
                     break;
+                default: // Por seguridad, siempre es bueno tener un default
+                    break;
             }
             last_command = CMD_NONE; //Reset del comando después de procesarlo
         }
-        switch (current_state) {
-            case STATE_INIT:
-                // motores_init(), rtc_init(), etc.
-                current_state = STATE_IDLE;
-                break;
+        if (current_state != last_reported_state){ //Para enviar los mensajes de logging una vez se ha cambiado de estado
+            switch (current_state) { //Lo que hace cada estado
+                case STATE_INIT:
+                    GUI_INFO("Inicialización");
+                    // motores_init(), rtc_init(), etc.
+                    current_state = STATE_IDLE;
+                    break;
 
-            case STATE_IDLE:
-                // La máquina no hace nada, espera comandos de la GUI
-                // El spindle está apagado
-                break;
+                case STATE_IDLE:
+                    GUI_INFO("Esperando orden...");
+                    // La máquina no hace nada, espera comandos de la GUI
+                    // El spindle está apagado
+                    break;
 
-            case STATE_JOG:
-                // motores_mover(eje, jog_step); 
-                current_state = STATE_IDLE; 
-                break;
+                case STATE_JOG:
+                    GUI_INFO("Movimiento manual de los ejes");
+                    // motores_mover(eje, jog_step); 
+                    current_state = STATE_IDLE; 
+                    break;
 
-            case STATE_RUNNING:
-                // Si hay un error de sensor o botón Stop -> current_state = STATE_ALARM;
-                break;
+                case STATE_RUNNING:
+                    GUI_INFO("En proceso de maquinado...");
+                    // Lógica de seguridad: Si la fresa se atasca en la madera, 
+                    // la corriente subirá mucho. ¡Disparamos la alarma!
+                    /*if (read_I_sensor(&corrientes_actuales)) {
+                        if (corrientes_actuales.s_I > LIMITE_MAX_SPINDLE) {
+                            GUI_ERROR("Sobrecarga en la Ruteadora: %d%%", corrientes_actuales.s_I);
+                            current_state = STATE_ALARM;
+                        } else if (corrientes_actuales.x_I > LIMITE_MAX_MOTORES) {
+                            GUI_WARN("Sobrecarga en el motor X: %d%%", corrientes_actuales.x_I);
+                            current_state = STATE_ALARM;
+                        } else if (corrientes_actuales.y_I > LIMITE_MAX_MOTORES) {
+                            GUI_WARN("Sobrecarga en el motor Y: %d%%", corrientes_actuales.y_I);
+                            current_state = STATE_ALARM;
+                        } else if (corrientes_actuales.z_I > LIMITE_MAX_MOTORES) {
+                            GUI_WARN("Sobrecarga en el motor Z: %d%%", corrientes_actuales.z_I);
+                            current_state = STATE_ALARM;
+                        }
+                    }*/
+                    break;
 
-            case STATE_PAUSE:
-                // Detener motores pero mantener ruteadora encendida
-                // motores_stop_gradual();
-                break;
+                case STATE_PAUSE:
+                    GUI_INFO("Máquina en pausa");
+                    // Detener motores pero mantener ruteadora encendida
+                    // motores_stop_gradual();
+                    break;
 
-            case STATE_ALARM:
-                // BLOQUEO TOTAL: Apagar ruteadora y motores
-                // ruteadora_off();
-                // motores_disable();
-                break;
+                case STATE_ALARM:
+                    GUI_INFO("Proceso detenido completamente");
+                    // BLOQUEO TOTAL: Apagar ruteadora y motores
+                    // ruteadora_off();
+                    // motores_disable();
+                    break;
+                default: //Por seguridad
+                    break;
+            }
+            last_reported_state = current_state; //Guardamos el estado actual
         }
         vTaskDelay(pdMS_TO_TICKS(20)); // Pequeña espera para no saturar CPU
     }

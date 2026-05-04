@@ -1,9 +1,6 @@
 #include "current_sensor.h"
 #include "system_lib.h"
 adc_oneshot_unit_handle_t adc1_handle;
-uint64_t timer_value = 0; // timer para ADCs
-int adc_raw_IS, adc_raw_IX, adc_raw_IY, adc_raw_IZ;
-int IS, IX, IY, IZ;
 void I_sensor_init(void){
     timer_config_t config = {
         .divider = 80,
@@ -40,18 +37,22 @@ void I_sensor_init(void){
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
     timer_start(TIMER_GROUP_0, TIMER_0);
 }
-void read_I_sensor(void){
+bool read_I_sensor(consumo_cnc_t *data){
+    uint64_t timer_value; // timer para ADCs
     timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &timer_value); //para muestreo del ADC
     if(timer_value >= SAMPLE_PERIOD_US){
-        adc_oneshot_read(adc1_handle, ADC_CHANNEL_0, &adc_raw_IS);
-        adc_oneshot_read(adc1_handle, ADC_CHANNEL_3, &adc_raw_IX);
-        adc_oneshot_read(adc1_handle, ADC_CHANNEL_6, &adc_raw_IY);
-        adc_oneshot_read(adc1_handle, ADC_CHANNEL_7, &adc_raw_IZ);
-        //Valor digital recibido: número entero de 0 a 4095, pues es de 12 bits, entonces niveles = 2^12
-        IS = (adc_raw_IS * 100) / 4095; //en porcentaje
-        IX = (adc_raw_IX * 100) / 4095; //en porcentaje
-        IY = (adc_raw_IY * 100) / 4095; //en porcentaje
-        IZ = (adc_raw_IZ * 100) / 4095; //en porcentaje
+        int adc_raw;
+        adc_oneshot_read(adc1_handle, ADC_CHANNEL_0, &adc_raw);
+        data->s_I = (adc_raw * 100) / 4095;
+        adc_oneshot_read(adc1_handle, ADC_CHANNEL_3, &adc_raw);
+        data->x_I = (adc_raw * 100) / 4095;
+        adc_oneshot_read(adc1_handle, ADC_CHANNEL_6, &adc_raw);
+        data->y_I = (adc_raw * 100) / 4095;
+        adc_oneshot_read(adc1_handle, ADC_CHANNEL_7, &adc_raw);
+        data->z_I = (adc_raw * 100) / 4095;
+
         timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+        return true; //Hay datos leídos
     }
+    return false; //Aún no ha pasado el tiempo de muestreo
 }
