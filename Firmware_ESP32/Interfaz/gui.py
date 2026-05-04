@@ -7,6 +7,7 @@ import cv2 #pip install opencv-python
 import camera
 import numpy as np
 import serial #Para comunicación con lenguaje C de la ESP32
+import threading #Para logging con ESP32
 ser = serial.Serial('COM9', 115200, timeout=1) #RECORDAR CAMBIAR COM DEPENDIENDO DE DÓNDE ESTÉ CONECTADO ESP32
 
 class Application(ttk.Frame):
@@ -41,11 +42,10 @@ class Application(ttk.Frame):
         self.createButton("+Y", 6, 2, 15, 1155, 370)
         self.createButton("-step", 8, 1, 15, 925, 460)
         self.createButton("+step", 8, 1, 15, 1035, 460)
-        self.widgetText("INFO: ", 15, 800, 545)
-
-        self.widgetText("WARN: ", 15, 800, 595)
-
-        self.widgetText("ERROR: ", 15, 800, 645) 
+        self.start_serial_listener() #Recepción de Logging de ESP32
+        self.labelInfo = self.widgetText("INFO: ", 15, 800, 545)
+        self.labelWarn = self.widgetText("WARN: ", 15, 800, 595)
+        self.labelError = self.widgetText("ERROR: ", 15, 800, 645)
         
         self.labelStep = self.widgetText(f"Step: {self.step}", 12, 970, 430)
         self.widgetText("mm/min ", 10, 1040, 432)
@@ -54,7 +54,8 @@ class Application(ttk.Frame):
         print("Start Video")
 
         self.master.mainloop()
-    
+        
+
     def createFrame(self, xpos, ypos, width, height): # Video
         self.labelVideo_1 = tk.Label(
             self.master,
@@ -71,6 +72,29 @@ class Application(ttk.Frame):
         self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
         imgArray = Image.fromarray(self.frame)
         self.imgTk = ImageTk.PhotoImage(image=imgArray)
+
+    def start_serial_listener(self):
+        #Crear un hilo que corre en paralelo a la GUI:
+        hilo = threading.Thread(target=self.serial_reader, daemon=True)
+        hilo.start()
+    def serial_reader(self):
+        while True:
+            #Acá recibe los datos por UART de la ESP32 en gui_send_log, línea uart_write_bytes(UART_PORT, buffer, len);
+            if ser.in_waiting > 0: 
+                linea = ser.readline().decode('utf-8', errors='ignore').strip() #Lee todo hasta encontrar salto de línea '\n', ignorar errores por ruido de la señal
+                if linea:
+                    # .after para actualizar la GUI de forma segura desde otro hilo:
+                    self.master.after(0, self.update_gui_log, linea)
+    def update_gui_log(self, linea):
+        if "[INFO]" in linea:
+            texto = linea.replace("[INFO] ", "")
+            self.labelInfo.config(text=f"INFO: {texto}", fg="green")
+        elif "[WARN]" in linea:
+            texto = linea.replace("[WARN] ", "")
+            self.labelWarn.config(text=f"WARN: {texto}", fg="orange")
+        elif "[ERROR]" in linea:
+            texto = linea.replace("[ERROR] ", "")
+            self.labelError.config(text=f"ERROR: {texto}", fg="red")
     
     def widgetText(self, title, sz, xpos, ypos):
         self.fontLabelText = font.Font(

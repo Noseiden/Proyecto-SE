@@ -142,3 +142,12 @@
 2026-05-03 11:59:08 - logGUI - INFO - init GUI[0m
 2026-05-03 11:59:08 - logCamera - INFO - Init constructor RunCamera[0m
 2026-05-03 11:59:17 - logCamera - INFO - Creating Thread in start camera[0m
+2026-05-03 18:20:54 - logGUI - INFO - init GUI[0m
+2026-05-03 18:20:54 - logCamera - INFO - Init constructor RunCamera[0m
+2026-05-03 18:21:05 - logCamera - INFO - Creating Thread in start camera[0m
+2026-05-03 19:08:16 - logGUI - INFO - init GUI[0m
+2026-05-03 19:08:16 - logCamera - INFO - Init constructor RunCamera[0m
+2026-05-03 19:08:28 - logCamera - INFO - Creating Thread in start camera[0m
+2026-05-03 19:11:58 - logGUI - INFO - init GUI[0m
+2026-05-03 19:11:58 - logCamera - INFO - Init constructor RunCamera[0m
+2026-05-03 19:12:08 - logCamera - INFO - Creating Thread in start camera[0m
