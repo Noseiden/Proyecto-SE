@@ -37,19 +37,25 @@ void I_sensor_init(void){
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
     timer_start(TIMER_GROUP_0, TIMER_0);
 }
+static float calc_I(int raw) { //static para que sea una función privada de este archivo.c
+    //Trabajando en mV, pasar a A, según datasheet del sensor de corriente
+    float mv = ((float)raw * 3300.0f) / 4095.0f; //f para indicar que es número punto flotante
+    return (mv - 2500.0f) / 100.0f; //offset de 2.5V y 100mV/A de sensibilidad del sensor de corriente 20A
+}
 bool read_I_sensor(consumo_cnc_t *data){
     uint64_t timer_value; // timer para ADCs
     timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &timer_value); //para muestreo del ADC
     if(timer_value >= SAMPLE_PERIOD_US){
         int adc_raw;
-        adc_oneshot_read(adc1_handle, ADC_CHANNEL_0, &adc_raw);
-        data->s_I = (adc_raw * 100) / 4095;
-        adc_oneshot_read(adc1_handle, ADC_CHANNEL_3, &adc_raw);
-        data->x_I = (adc_raw * 100) / 4095;
+        //Ingresar datos a la estructura data (de puntero *data a estructura):
+        adc_oneshot_read(adc1_handle, ADC_CHANNEL_0, &adc_raw); 
+        data->s_I = calc_I(adc_raw); // -> significa ve a (*data) y accede a s_I
+        adc_oneshot_read(adc1_handle, ADC_CHANNEL_3, &adc_raw); 
+        data->x_I = calc_I(adc_raw); //O también decir (*data).x_I
         adc_oneshot_read(adc1_handle, ADC_CHANNEL_6, &adc_raw);
-        data->y_I = (adc_raw * 100) / 4095;
+        data->y_I = calc_I(adc_raw);
         adc_oneshot_read(adc1_handle, ADC_CHANNEL_7, &adc_raw);
-        data->z_I = (adc_raw * 100) / 4095;
+        data->z_I = calc_I(adc_raw);
 
         timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
         return true; //Hay datos leídos

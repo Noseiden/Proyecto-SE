@@ -135,12 +135,6 @@ void app_main(void) {
         }
         if (current_state != last_reported_state){ //Para enviar los mensajes de logging una vez se ha cambiado de estado
             switch (current_state) { //Lo que hace cada estado
-                case STATE_INIT:
-                    GUI_INFO("Inicialización");
-                    // motores_init(), rtc_init(), etc.
-                    current_state = STATE_IDLE;
-                    break;
-
                 case STATE_IDLE:
                     GUI_INFO("Esperando orden...");
                     // La máquina no hace nada, espera comandos de la GUI
@@ -155,35 +149,38 @@ void app_main(void) {
 
                 case STATE_RUNNING:
                     GUI_INFO("En proceso de maquinado...");
-                    // Lógica de seguridad: Si la fresa se atasca en la madera, 
-                    // la corriente subirá mucho. ¡Disparamos la alarma!
-                    /*if (read_I_sensor(&corrientes_actuales)) {
-                        if (corrientes_actuales.s_I > LIMITE_MAX_SPINDLE) {
-                            GUI_ERROR("Sobrecarga en la Ruteadora: %d%%", corrientes_actuales.s_I);
+                    // Lógica de seguridad: Si la fresa se atasca en el material, la corriente subirá mucho.
+                    // En los cuatro motores, jalan hasta 4A 
+                    if (read_I_sensor(&corrientes_actuales)) {
+                        if (corrientes_actuales.s_I > 3) {
+                            GUI_ERROR("Sobrecarga en la Ruteadora: %.2f A", corrientes_actuales.s_I);
                             current_state = STATE_ALARM;
-                        } else if (corrientes_actuales.x_I > LIMITE_MAX_MOTORES) {
-                            GUI_WARN("Sobrecarga en el motor X: %d%%", corrientes_actuales.x_I);
+                        } else if (corrientes_actuales.x_I > 3) {
+                            GUI_ERROR("Sobrecarga en el motor X: %.2f A", corrientes_actuales.x_I);
                             current_state = STATE_ALARM;
-                        } else if (corrientes_actuales.y_I > LIMITE_MAX_MOTORES) {
-                            GUI_WARN("Sobrecarga en el motor Y: %d%%", corrientes_actuales.y_I);
+                        } else if (corrientes_actuales.y_I > 3) {
+                            GUI_ERROR("Sobrecarga en el motor Y: %.2f A", corrientes_actuales.y_I);
                             current_state = STATE_ALARM;
-                        } else if (corrientes_actuales.z_I > LIMITE_MAX_MOTORES) {
-                            GUI_WARN("Sobrecarga en el motor Z: %d%%", corrientes_actuales.z_I);
+                        } else if (corrientes_actuales.z_I > 3) {
+                            GUI_ERROR("Sobrecarga en el motor Z: %.2f A", corrientes_actuales.z_I);
                             current_state = STATE_ALARM;
                         }
-                    }*/
+                    }
+                    
                     break;
 
                 case STATE_PAUSE:
-                    GUI_INFO("Máquina en pausa");
-                    // Detener motores pero mantener ruteadora encendida
-                    // motores_stop_gradual();
+                    GUI_INFO("Continuar el proceso presionando Start");
+                    GUI_WARN("Máquina en pausa, pero ruteadora encendida");
+                    // Apagar motores inmediatamente pero mantener ruteadora encendida
+                    // motores_disable();
                     break;
 
                 case STATE_ALARM:
                     GUI_INFO("Proceso detenido completamente");
-                    // BLOQUEO TOTAL: Apagar ruteadora y motores
-                    // ruteadora_off();
+                    GUI_WARN("Pérdida de pasos");
+                    // Apagar motores inmediatamente y detener después de un segundo el spindle
+                    // ruteadora_off_delay();
                     // motores_disable();
                     break;
                 default: //Por seguridad
