@@ -2,7 +2,7 @@
 
 #define UART_PORT UART_NUM_0 //Comunicación UART por USB ESP32 con computador
 
-#define LIMIT_SWITCH_X0 (GPIO_NUM_33)
+#define LIMIT_SWITCH_X0 (GPIO_NUM_25)
 #define LIMIT_SWITCH_X1 (GPIO_NUM_26)
 #define LIMIT_SWITCH_Y0 (GPIO_NUM_27)
 #define LIMIT_SWITCH_Y1 (GPIO_NUM_14)
@@ -10,8 +10,8 @@
 #define LIMIT_SWITCH_Z1 (GPIO_NUM_13)
 
 #define SPINDLE_ONOFF (GPIO_NUM_23)
-#define RTC_SCL (GPIO_NUM_32)
-#define RTC_SDA (GPIO_NUM_35)
+#define RTC_SCL (GPIO_NUM_33)
+#define RTC_SDA (GPIO_NUM_32)
 #define DIR_MOTOR_Z (GPIO_NUM_19)
 #define PUL_MOTOR_Z (GPIO_NUM_18)
 #define ENA_MOTOR_Z (GPIO_NUM_21)
