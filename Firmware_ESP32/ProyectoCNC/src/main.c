@@ -7,6 +7,8 @@
 
 int step_mm = 0;
 int step_received = 0;
+TickType_t timestamp_alarm = 0;
+bool to_shutdown_spindle = false;
 
 typedef enum { //botones de GUI
     CMD_NONE, 
@@ -76,6 +78,8 @@ void app_main(void) {
     uart_param_config(UART_PORT, &uart_config); // & para mandar de una vez como pointer
     uart_driver_install(UART_PORT, 1024, 1024, 0, NULL, 0);
     
+    spindle_init(); // Configuración de la ruteadora
+
     I_sensor_init(); //Configuración ADC de los sensores de corriente
     consumo_cnc_t corrientes_actuales;
     cnc_state_t last_reported_state = -1;
@@ -140,61 +144,69 @@ void app_main(void) {
             switch (current_state) { //Lo que hace cada estado
                 case STATE_IDLE:
                     GUI_INFO("Esperando orden de maquinado o Jog manual");
-                    // La máquina no hace nada, espera comandos de la GUI
-                    // El spindle está apagado
+                    SPINDLE_OFF;
                     break;
 
                 case STATE_JOG:
                     GUI_INFO("Movimiento manual de los ejes");
+                    SPINDLE_OFF;
                     // motores_mover(eje, jog_step); 
                     current_state = STATE_IDLE; 
                     break;
 
                 case STATE_RUNNING:
                     GUI_INFO("En proceso de maquinado...");
-                    // Lógica de seguridad: Si la fresa se atasca en el material, la corriente subirá mucho.
-                    // En los cuatro motores, jalan hasta 4A 
-                    if (read_I_sensor(&corrientes_actuales)) {
-                        if (corrientes_actuales.s_I > 3) {
-                            GUI_ERROR("Sobrecarga en la Ruteadora: %.2f A", corrientes_actuales.s_I);
-                            current_state = STATE_ALARM;
-                        } else if (corrientes_actuales.x_I > 3) {
-                            GUI_ERROR("Sobrecarga en el motor X: %.2f A", corrientes_actuales.x_I);
-                            current_state = STATE_ALARM;
-                        } else if (corrientes_actuales.y_I > 3) {
-                            GUI_ERROR("Sobrecarga en el motor Y: %.2f A", corrientes_actuales.y_I);
-                            current_state = STATE_ALARM;
-                        } else if (corrientes_actuales.z_I > 3) {
-                            GUI_ERROR("Sobrecarga en el motor Z: %.2f A", corrientes_actuales.z_I);
-                            current_state = STATE_ALARM;
-                        }
-                    }
-                    
                     break;
 
                 case STATE_PAUSE:
                     GUI_INFO("Continuar el proceso presionando Start");
-                    GUI_WARN("Ruteadora encendida al pausar el proceso");
-                    // Apagar motores inmediatamente pero mantener ruteadora encendida
+                    GUI_WARN("Ruteadora aún encendida al pausar el proceso");
+                    SPINDLE_ON;
                     // motores_disable();
                     break;
 
                 case STATE_ALARM:
                     GUI_INFO("Proceso detenido completamente");
                     GUI_WARN("Pérdida de pasos");
-                    // Apagar motores inmediatamente y detener después de un segundo el spindle
-                    // ruteadora_off_delay();
+                    SPINDLE_OFF; //Dos segundos?
                     // motores_disable();
+                    timestamp_alarm = xTaskGetTickCount(); //Inicia tiempo para Spindle
+                    to_shutdown_spindle = true;
                     break;
                 default: //Por seguridad
                     break;
             }
             last_reported_state = current_state; //Guardamos el estado actual
         }
-        if ((xTaskGetTickCount() - ultima_lectura_rtc) >= pdMS_TO_TICKS(1000)) { //Cada segundo
+        switch(current_state){ //Acciones continuas mientras se esté en el estado
+            case STATE_RUNNING:
+            // En los cuatro motores, jalan hasta 4A 
+                if (read_I_sensor(&corrientes_actuales)) {
+                    if (corrientes_actuales.s_I > 3 || corrientes_actuales.x_I > 3 ||
+                        corrientes_actuales.y_I > 3 || corrientes_actuales.z_I > 3) {
+                        GUI_ERROR("Sobrecarga en la Ruteadora: %.2f A", corrientes_actuales.s_I);
+                        current_state = STATE_ALARM;
+                    }
+                }
+                break;
+            case STATE_ALARM:
+                if (to_shutdown_spindle){
+                    if ((xTaskGetTickCount() - timestamp_alarm) >= pdMS_TO_TICKS(2000)){ // Control por Marca de Tiempo (Timestamp Polling).
+                        SPINDLE_OFF;
+                        to_shutdown_spindle = false;
+                        GUI_INFO("Ruteadora apagada por seguridad tras 2s");
+                    }
+                }  
+                break;
+            default:
+                break;
+        }
+
+        if ((xTaskGetTickCount() - ultima_lectura_rtc) >= pdMS_TO_TICKS(1000)) { //Cada segundo (Timestamp polling)
             ultima_lectura_rtc = xTaskGetTickCount(); // Actualizaz el contador
             ds1307_read_time(); // enviará y mostrará la hora actual por UART
         }
+        
         vTaskDelay(pdMS_TO_TICKS(20)); // Pequeña espera para no saturar CPU
     }
 }
