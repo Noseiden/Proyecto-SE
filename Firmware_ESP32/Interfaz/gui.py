@@ -46,9 +46,9 @@ class Application(ttk.Frame):
         self.labelInfo = self.widgetText("INFO: ", 15, 800, 545)
         self.labelWarn = self.widgetText("WARN: ", 15, 800, 595)
         self.labelError = self.widgetText("ERROR: ", 15, 800, 645)
-        
         self.labelStep = self.widgetText(f"Step: {self.step}", 12, 970, 430)
         self.widgetText("mm/min ", 10, 1040, 432)
+        self.labelTime = self.widgetText("RTC: Cargando...", 11, 800, 520)
 
         self.showVideo()
         print("Start Video")
@@ -95,6 +95,9 @@ class Application(ttk.Frame):
         elif "[ERROR]" in linea:
             texto = linea.replace("[ERROR] ", "")
             self.labelError.config(text=f"ERROR: {texto}", fg="red")
+        elif "[RTC]" in linea:
+            texto = linea.replace("[RTC] ", "")
+            self.labelTime.config(text=f"Tiempo real: {texto}", fg="#000080")
     
     def widgetText(self, title, sz, xpos, ypos):
         self.fontLabelText = font.Font(
@@ -266,67 +269,108 @@ class Application(ttk.Frame):
                 self.btnO.place(x=posx, y=posy)
 
     def Startpressed(self):
-        ser.write(b"START\n")
-        print("Orden de inicio enviada a ESP32")
-        self.btnStart.config(state=tk.DISABLED)
-        self.btnStop.config(state=tk.NORMAL)
-        self.btnPause.config(state=tk.NORMAL)
-        self.btnReset.config(state=tk.NORMAL)
+        if ser.is_open: # Enviará datos siempre que el cable USB esté conectado
+            ser.write(b"START\n")
+            print("Orden de inicio enviada a ESP32")
+            self.btnStart.config(state=tk.DISABLED)
+            self.btnStop.config(state=tk.NORMAL)
+            self.btnPause.config(state=tk.NORMAL)
+            self.btnReset.config(state=tk.NORMAL)
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Pausepressed(self):
-        ser.write(b"PAUSE\n")
-        print("Orden de pausa enviada a ESP32")
-        self.btnStart.config(state=tk.NORMAL)
-        self.btnStop.config(state=tk.NORMAL)
-        self.btnPause.config(state=tk.DISABLED)
-        self.btnReset.config(state=tk.NORMAL)
+        if ser.is_open:
+            ser.write(b"PAUSE\n")
+            print("Orden de pausa enviada a ESP32")
+            self.btnStart.config(state=tk.NORMAL)
+            self.btnStop.config(state=tk.NORMAL)
+            self.btnPause.config(state=tk.DISABLED)
+            self.btnReset.config(state=tk.NORMAL)
+        else: 
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Stoppressed(self):
-        ser.write(b"STOP\n")
-        print("Orden de paro enviada a ESP32")
-        self.btnStart.config(state=tk.NORMAL)
-        self.btnStop.config(state=tk.DISABLED)
-        self.btnPause.config(state=tk.NORMAL)
-        self.btnReset.config(state=tk.NORMAL)
+        if ser.is_open:
+            ser.write(b"STOP\n")
+            print("Orden de paro enviada a ESP32")
+            self.btnStart.config(state=tk.NORMAL)
+            self.btnStop.config(state=tk.DISABLED)
+            self.btnPause.config(state=tk.NORMAL)
+            self.btnReset.config(state=tk.NORMAL)
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Resetpressed(self):
-        ser.write(b"RESET\n")
-        print("Orden de reset enviada a ESP32")
-        self.btnStart.config(state=tk.NORMAL)
-        self.btnStop.config(state=tk.NORMAL)
-        self.btnPause.config(state=tk.NORMAL)
-        self.btnReset.config(state=tk.DISABLED)
+        if ser.is_open:
+            ser.write(b"RESET\n")
+            print("Orden de reset enviada a ESP32")
+            self.btnStart.config(state=tk.NORMAL)
+            self.btnStop.config(state=tk.NORMAL)
+            self.btnPause.config(state=tk.NORMAL)
+            self.btnReset.config(state=tk.DISABLED)
+            self.labelWarn.config(text=" ")
+            self.labelError.config(text=" ")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Zppressed(self):
-        ser.write(b"Zp\n")
-        print("Orden de + Z enviada a ESP32")
+        if ser.is_open:
+            ser.write(b"Zp\n")
+            print("Orden de + Z enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Zmpressed(self):
-        ser.write(b"Zm\n")
-        print("Orden de - Z enviada a ESP32")
+        if ser.is_open:
+            ser.write(b"Zm\n")
+            print("Orden de - Z enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Xppressed(self):
-        ser.write(b"Xp\n")
-        print("Orden de + X enviada a ESP32")
+        if ser.is_open:
+            ser.write(b"Xp\n")
+            print("Orden de + X enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Xmpressed(self):
-        ser.write(b"Xm\n")
-        print("Orden de - X enviada a ESP32")
+        if ser.is_open:
+            ser.write(b"Xm\n")
+            print("Orden de - X enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Yppressed(self):
-        ser.write(b"Yp\n")
-        print("Orden de + Y enviada a ESP32")
+        if ser.is_open:
+            ser.write(b"Yp\n")
+            print("Orden de + Y enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Ympressed(self):
-        ser.write(b"Ym\n")
-        print("Orden de - Y enviada a ESP32")
+        if ser.is_open:
+            ser.write(b"Ym\n")
+            print("Orden de - Y enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Stepppressed(self):
         self.step += 1 #mm
         self.labelStep.config(text=f"Step: {self.step}") #Actualizar el valor mostrado en GUI        
-        mensaje = f"STEP:{self.step}\n"
-        ser.write(mensaje.encode('utf-8')) #Lo codificamos a bytes y lo enviamos
-        print(f"Step enviado a ESP32: {mensaje.strip()}")
+        if ser.is_open: 
+            mensaje = f"STEP:{self.step}\n"
+            ser.write(mensaje.encode('utf-8')) #Lo codificamos a bytes y lo enviamos
+            print(f"Step enviado a ESP32: {mensaje.strip()}")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Stepmpressed(self):
         if self.step > 0:
             self.step -= 1 #mm
             self.labelStep.config(text=f"Step: {self.step}") #Actualizar el valor mostrado en GUI
-            mensaje = f"STEP:{self.step}\n"
-            ser.write(mensaje.encode('utf-8')) #Lo codificamos a bytes y lo enviamos
-            print(f"Step enviado a ESP32: {mensaje.strip()}")
+            if ser.is_open:
+                mensaje = f"STEP:{self.step}\n"
+                ser.write(mensaje.encode('utf-8')) #Lo codificamos a bytes y lo enviamos
+                print(f"Step enviado a ESP32: {mensaje.strip()}")
+            else:
+                print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     def Opressed(self):
-        ser.write(b"ORIGIN\n")
-        print("Orden de origen enviada a ESP32")
+        if ser.is_open:
+            ser.write(b"ORIGIN\n")
+            print("Orden de origen enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     
         
     def showVideo(self): #Actualiza cada frame para mostrar video continuo

@@ -6,6 +6,7 @@
 #include "rtc_ds1307.h"
 
 int step_mm = 0;
+int step_received = 0;
 
 typedef enum { //botones de GUI
     CMD_NONE, 
@@ -41,13 +42,12 @@ void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para c
         int len = uart_read_bytes(UART_PORT, data, sizeof(data) - 1, 20 / portTICK_PERIOD_MS);
         if (len > 0) {
             data[len] = '\0'; // Convertimos a string de C
-            char *p_step = strstr((char*)data, "Step:");
+            char *p_step = strstr((char*)data, "STEP:");
             // Comparamos lo recibido con las palabras clave de botones
             if (p_step != NULL){
-                sscanf(p_step, "Step:%d", &step_mm); // Con sscanf, busca en Step: un número entero(%d) para llevarlo a step_mm
-                //char confirm[50]; //buffer con espacio en memoria
-                //int msg = sprintf(confirm, "CONF_STEP:%d mm/min\n", step_mm);
-                //uart_write_bytes(UART_PORT, confirm, msg);
+                if(sscanf(p_step, "STEP:%d", &step_mm) == 1){  // Con sscanf, busca en STEP: un número entero(%d) para llevarlo a step_mm
+                    GUI_INFO("Paso de JOG actualizado a: %d mm/min", step_mm);
+                }
             } else if (strstr((char*)data, "START"))  last_command = CMD_START;
             else if (strstr((char*)data, "PAUSE"))  last_command = CMD_PAUSE;
             else if (strstr((char*)data, "STOP"))   last_command = CMD_STOP;
@@ -66,20 +66,23 @@ void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para c
 
 void app_main(void) {
     uart_config_t uart_config = {
-        .baud_rate = 115200,  //poner en platformio.ini --> monitor_speed = 9600, es decir, velocidad del computador debe ser la misma del ESP32
+        .baud_rate = 115200,  
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .source_clk = UART_SCLK_DEFAULT
     };
-    uart_param_config(UART_PORT, &uart_config); // & para mandar de una vez comox pointer
+    uart_param_config(UART_PORT, &uart_config); // & para mandar de una vez como pointer
     uart_driver_install(UART_PORT, 1024, 1024, 0, NULL, 0);
     
     I_sensor_init(); //Configuración ADC de los sensores de corriente
     consumo_cnc_t corrientes_actuales;
     cnc_state_t last_reported_state = -1;
     xTaskCreate(task_receive_gui, "GUI_Task", 4096, NULL, 5, NULL); //para que FreeRTOS identifique la tarea 
+    i2c_init();
+    ds1307_write_hours(0, 0, 12, 5, 22, 5, 26); // 12:00:00, día 5 de la semana, 22/05/26 
+    TickType_t ultima_lectura_rtc = xTaskGetTickCount(); //control del tiempo RTC
     while (1) {
         if (last_command != CMD_NONE) { //Las transiciones a cada estado
             switch(last_command) {
@@ -136,7 +139,7 @@ void app_main(void) {
         if (current_state != last_reported_state){ //Para enviar los mensajes de logging una vez se ha cambiado de estado
             switch (current_state) { //Lo que hace cada estado
                 case STATE_IDLE:
-                    GUI_INFO("Esperando orden...");
+                    GUI_INFO("Esperando orden de maquinado o Jog manual");
                     // La máquina no hace nada, espera comandos de la GUI
                     // El spindle está apagado
                     break;
@@ -171,7 +174,7 @@ void app_main(void) {
 
                 case STATE_PAUSE:
                     GUI_INFO("Continuar el proceso presionando Start");
-                    GUI_WARN("Máquina en pausa, pero ruteadora encendida");
+                    GUI_WARN("Ruteadora encendida al pausar el proceso");
                     // Apagar motores inmediatamente pero mantener ruteadora encendida
                     // motores_disable();
                     break;
@@ -187,6 +190,10 @@ void app_main(void) {
                     break;
             }
             last_reported_state = current_state; //Guardamos el estado actual
+        }
+        if ((xTaskGetTickCount() - ultima_lectura_rtc) >= pdMS_TO_TICKS(1000)) { //Cada segundo
+            ultima_lectura_rtc = xTaskGetTickCount(); // Actualizaz el contador
+            ds1307_read_time(); // enviará y mostrará la hora actual por UART
         }
         vTaskDelay(pdMS_TO_TICKS(20)); // Pequeña espera para no saturar CPU
     }

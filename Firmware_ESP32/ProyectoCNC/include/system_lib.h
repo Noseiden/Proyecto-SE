@@ -13,5 +13,6 @@
 #include "esp_adc/adc_oneshot.h" //ADC
 #include "driver/ledc.h" //PWM
 #include "driver/uart.h" //Comunicación serial UART
+#include "driver/i2c.h"
 
 #include "pin_map.h"
