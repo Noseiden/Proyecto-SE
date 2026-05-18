@@ -52,7 +52,7 @@ void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para c
             // Comparamos lo recibido con las palabras clave de botones
             if (p_step != NULL){
                 if(sscanf(p_step, "STEP:%d", &step_mm) == 1){  // Con sscanf, busca en STEP: un número entero(%d) para llevarlo a step_mm
-                    GUI_INFO("Paso de JOG actualizado a: %d mm/min", step_mm);
+                    GUI_INFO("Paso de JOG actualizado a: %d mm", step_mm);
                 }
             } else if (strstr((char*)data, "START"))  last_command = CMD_START;
             else if (strstr((char*)data, "PAUSE"))  last_command = CMD_PAUSE;
@@ -84,7 +84,6 @@ void app_main(void) {
     
     spindle_init(); // Configuración de la ruteadora
     motor_init(); // Configuración de los motores de los ejes y finales de carrera
-
     I_sensor_init(); //Configuración ADC de los sensores de corriente
     consumo_cnc_t corrientes_actuales;
     cnc_state_t last_reported_state = -1;
@@ -92,6 +91,7 @@ void app_main(void) {
     i2c_init();
     ds1307_write_hours(0, 0, 12, 5, 22, 5, 26); // 12:00:00, día 5 de la semana, 22/05/26 
     TickType_t ultima_lectura_rtc = xTaskGetTickCount(); //control del tiempo RTC
+    current_state = STATE_IDLE;
     while (1) {
         if (last_command != CMD_NONE) { //Las transiciones a cada estado por botones de GUI
             switch(last_command) {
@@ -164,6 +164,7 @@ void app_main(void) {
                     motor_jog(true, step_mm, direction_x, direction_y, direction_z, x_jog, y_jog, z_jog);
                     break;
                 case STATE_HOMING:
+                    GUI_INFO("Retorno a posición inicial");
                     home(true);
                     break;
 
@@ -174,7 +175,6 @@ void app_main(void) {
                     y_jog = false;
                     z_jog = false;
                     make_a_circle(true);
-
                     break;
 
                 case STATE_PAUSE:
@@ -220,8 +220,9 @@ void app_main(void) {
                         current_state = STATE_ALARM;
                     }
                 }
-                if (SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON ||
-                    SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON){
+                if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON){
+                    //SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON || 
+                    //Probrar la anterior condición pero primero haciendo homing y luego mover con Jog un poco
                     current_state = STATE_ALARM;
                 }
                 break;
@@ -231,6 +232,7 @@ void app_main(void) {
                         SPINDLE_OFF;
                         to_shutdown_spindle = false;
                         GUI_INFO("Ruteadora apagada por seguridad tras 2s");
+                        current_state = STATE_IDLE;
                     }
                 }  
                 break;

@@ -1,6 +1,6 @@
 #include "router_spindle.h"
 #include "system_lib.h"
-spindle_init(void){
+void spindle_init(void){
     gpio_config_t out_spindle = {
         .pin_bit_mask = (1ULL << SPINDLE_ONOFF),
         .mode = GPIO_MODE_OUTPUT,

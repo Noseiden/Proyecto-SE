@@ -228,11 +228,11 @@ bool home(bool init){
         CW_DIR_X;
         CW_DIR_Y;
         CCW_DIR_Z;
-        bool z_homed = false; 
-        bool x_homed = false;
-        bool y_homed = false;
-        bool x_running = false;
-        bool y_running = false;
+        z_homed = false; 
+        x_homed = false;
+        y_homed = false;
+        x_running = false;
+        y_running = false;
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 2048); //Al 50% DutyCyle
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
         return false;
@@ -263,6 +263,7 @@ bool home(bool init){
     if (z_homed && x_homed && y_homed) {
         return true; // Homing completado
     }
+    return false;
 }
 
 void stop_motors(void){
