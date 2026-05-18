@@ -37,6 +37,9 @@ typedef enum { //Estados
 volatile cnc_state_t current_state = STATE_INIT;
 
 float pos_x = 0, pos_y = 0, pos_z = 0;
+bool direction_x = true, direction_y = true, direction_z = false; //CCW = true, CW = false
+bool x_jog = false, y_jog = false, z_jog = false; 
+
 
 void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para cambio de estado
     uint8_t data[128];
@@ -103,37 +106,43 @@ void app_main(void) {
                 case CMD_JOG_XP: 
                     if(current_state == STATE_IDLE) {
                         current_state = STATE_JOG; 
-                        pos_x += step_mm; 
+                        x_jog = true;
+                        direction_x = true; 
                     }
                     break;
                 case CMD_JOG_XM: 
                     if(current_state == STATE_IDLE) {
                         current_state = STATE_JOG; 
-                        pos_x -= step_mm; 
+                        x_jog = true;
+                        direction_x = false; 
                     }
                     break;
                 case CMD_JOG_YP: 
                     if(current_state == STATE_IDLE) {
                         current_state = STATE_JOG; 
-                        pos_y += step_mm; 
+                        y_jog = true;
+                        direction_y = true; 
                     }
                     break;
                 case CMD_JOG_YM: 
                     if(current_state == STATE_IDLE) {
                         current_state = STATE_JOG; 
-                        pos_y -= step_mm; 
+                        y_jog = true;
+                        direction_y = false; 
                     }
                     break;
                 case CMD_JOG_ZP: 
                     if(current_state == STATE_IDLE) {
                         current_state = STATE_JOG; 
-                        pos_z += step_mm; 
+                        z_jog = true;
+                        direction_z = false; 
                     }
                     break;
                 case CMD_JOG_ZM: 
                     if(current_state == STATE_IDLE) {
                         current_state = STATE_JOG; 
-                        pos_z -= step_mm; 
+                        z_jog = true;
+                        direction_z = true; 
                     }
                     break;
                 default: // Por seguridad, siempre es bueno tener un default
@@ -146,28 +155,34 @@ void app_main(void) {
                 case STATE_IDLE:
                     GUI_INFO("Esperando orden de maquinado o Jog manual");
                     SPINDLE_OFF;
+                    MOTORS_DISABLE_ALL();
                     break;
 
                 case STATE_JOG:
                     GUI_INFO("Movimiento manual de los ejes");
                     SPINDLE_OFF;
-                    // motores_mover(eje, jog_step); 
+                    motor_jog(true, step_mm, direction_x, direction_y, direction_z, x_jog, y_jog, z_jog);
                     current_state = STATE_IDLE; 
                     break;
 
                 case STATE_RUNNING:
                     GUI_INFO("En proceso de maquinado...");
+                    x_jog = false;
+                    y_jog = false;
+                    z_jog = false;
                     break;
 
                 case STATE_PAUSE:
                     GUI_INFO("Continuar el proceso presionando Start");
                     GUI_WARN("Ruteadora aún encendida al pausar el proceso");
                     SPINDLE_ON;
+                    stop_motors();
                     break;
 
                 case STATE_ALARM:
                     GUI_INFO("Proceso detenido completamente");
                     GUI_WARN("Pérdida de pasos");
+                    stop_motors();
                     timestamp_alarm = xTaskGetTickCount(); //Inicia tiempo para Spindle
                     to_shutdown_spindle = true;
                     break;
@@ -177,6 +192,11 @@ void app_main(void) {
             last_reported_state = current_state; //Guardamos el estado actual
         }
         switch(current_state){ //Acciones continuas mientras se esté en el estado
+            case STATE_JOG:
+                if(motor_jog(false, step_mm, direction_x, direction_y, direction_z, x_jog, y_jog, z_jog) == true){
+                    current_state = STATE_IDLE;
+                }
+                break;
             case STATE_RUNNING:
             // En los cuatro motores, jalan hasta 4A 
                 if (read_I_sensor(&corrientes_actuales)) {
@@ -186,6 +206,7 @@ void app_main(void) {
                         current_state = STATE_ALARM;
                     }
                 }
+
                 break;
             case STATE_ALARM:
                 if (to_shutdown_spindle){
