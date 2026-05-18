@@ -47,7 +47,7 @@ class Application(ttk.Frame):
         self.labelWarn = self.widgetText("WARN: ", 15, 800, 595)
         self.labelError = self.widgetText("ERROR: ", 15, 800, 645)
         self.labelStep = self.widgetText(f"Step: {self.step}", 12, 970, 430)
-        self.widgetText("mm/min ", 10, 1040, 432)
+        self.widgetText("mm", 10, 1040, 432)
         self.labelTime = self.widgetText("RTC: Cargando...", 11, 800, 520)
 
         self.showVideo()
