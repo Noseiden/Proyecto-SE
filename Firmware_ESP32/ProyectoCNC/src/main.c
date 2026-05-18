@@ -30,6 +30,7 @@ typedef enum { //Estados
     STATE_INIT,
     STATE_IDLE,
     STATE_JOG,
+    STATE_HOMING,
     STATE_RUNNING,
     STATE_PAUSE,
     STATE_ALARM
@@ -92,11 +93,11 @@ void app_main(void) {
     ds1307_write_hours(0, 0, 12, 5, 22, 5, 26); // 12:00:00, día 5 de la semana, 22/05/26 
     TickType_t ultima_lectura_rtc = xTaskGetTickCount(); //control del tiempo RTC
     while (1) {
-        if (last_command != CMD_NONE) { //Las transiciones a cada estado
+        if (last_command != CMD_NONE) { //Las transiciones a cada estado por botones de GUI
             switch(last_command) {
                 case CMD_START: current_state = STATE_RUNNING; break;
                 case CMD_PAUSE: current_state = STATE_PAUSE; break;
-                case CMD_RESET: current_state = STATE_IDLE; break;
+                case CMD_RESET: current_state = STATE_HOMING; break;
                 case CMD_STOP:  current_state = STATE_ALARM; break;
                 case CMD_ORIGIN: 
                     if(current_state == STATE_IDLE) {
@@ -150,6 +151,7 @@ void app_main(void) {
             }
             last_command = CMD_NONE; //Reset del comando después de procesarlo
         }
+
         if (current_state != last_reported_state){ //Para enviar los mensajes de logging una vez se ha cambiado de estado
             switch (current_state) { //Lo que hace cada estado
                 case STATE_IDLE:
@@ -162,7 +164,9 @@ void app_main(void) {
                     GUI_INFO("Movimiento manual de los ejes");
                     SPINDLE_OFF;
                     motor_jog(true, step_mm, direction_x, direction_y, direction_z, x_jog, y_jog, z_jog);
-                    current_state = STATE_IDLE; 
+                    break;
+                case STATE_HOMING:
+                    home(true);
                     break;
 
                 case STATE_RUNNING:
@@ -197,6 +201,11 @@ void app_main(void) {
                     current_state = STATE_IDLE;
                 }
                 break;
+            case STATE_HOMING:
+                if(home(false) == true){
+                    current_state = STATE_IDLE;
+                }
+                break;
             case STATE_RUNNING:
             // En los cuatro motores, jalan hasta 4A 
                 if (read_I_sensor(&corrientes_actuales)) {
@@ -206,7 +215,9 @@ void app_main(void) {
                         current_state = STATE_ALARM;
                     }
                 }
-
+                if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON){
+                    current_state = STATE_ALARM;
+                } 
                 break;
             case STATE_ALARM:
                 if (to_shutdown_spindle){

@@ -139,6 +139,53 @@ bool motor_jog(bool init, int step, bool dir_x, bool dir_y, bool dir_z, bool x, 
     return false; //No ha terminado de avanzar
 }
 
+bool home(bool init){
+    static bool z_homed = false; //static para recordar su valor local en cada ejecución del main
+    static bool x_homed = false;
+    static bool y_homed = false;
+    static bool x_running = false;
+    static bool y_running = false;
+    if (init){
+        CW_DIR_X;
+        CW_DIR_Y;
+        CCW_DIR_Z;
+        bool z_homed = false; 
+        bool x_homed = false;
+        bool y_homed = false;
+        bool x_running = false;
+        bool y_running = false;
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
+        return false;
+    }
+    if(SWITCH_Z0_ON && !z_homed){ //Hasta que llegue a su posición inicial
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
+        z_homed = true; 
+    }
+    if(SWITCH_Z0_ON && !init && SWITCH_X0_OFF && !x_running){
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+        x_running = true;
+    } else if (SWITCH_Z0_ON && !init && SWITCH_X0_ON && !x_homed) {
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0); 
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+        x_homed = true;
+    }
+    if(SWITCH_Z0_ON && !init && SWITCH_Y0_OFF && !y_running){
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+        y_running = true;
+    } else if (SWITCH_Z0_ON && !init && SWITCH_Y0_ON && !y_homed) {
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0); 
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+        y_homed = true;
+    }
+    if (z_homed && x_homed && y_homed) {
+        return true; // Homing completado
+    }
+}
+
 void stop_motors(void){
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
