@@ -79,6 +79,7 @@ void app_main(void) {
     uart_driver_install(UART_PORT, 1024, 1024, 0, NULL, 0);
     
     spindle_init(); // Configuración de la ruteadora
+    motor_init(); // Configuración de los motores de los ejes y finales de carrera
 
     I_sensor_init(); //Configuración ADC de los sensores de corriente
     consumo_cnc_t corrientes_actuales;
@@ -162,14 +163,11 @@ void app_main(void) {
                     GUI_INFO("Continuar el proceso presionando Start");
                     GUI_WARN("Ruteadora aún encendida al pausar el proceso");
                     SPINDLE_ON;
-                    // motores_disable();
                     break;
 
                 case STATE_ALARM:
                     GUI_INFO("Proceso detenido completamente");
                     GUI_WARN("Pérdida de pasos");
-                    SPINDLE_OFF; //Dos segundos?
-                    // motores_disable();
                     timestamp_alarm = xTaskGetTickCount(); //Inicia tiempo para Spindle
                     to_shutdown_spindle = true;
                     break;
