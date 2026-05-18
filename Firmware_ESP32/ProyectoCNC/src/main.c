@@ -37,7 +37,7 @@ typedef enum { //Estados
 } cnc_state_t;
 volatile cnc_state_t current_state = STATE_INIT;
 
-float pos_x = 0, pos_y = 0, pos_z = 0;
+
 bool direction_x = true, direction_y = true, direction_z = false; //CCW = true, CW = false
 bool x_jog = false, y_jog = false, z_jog = false; 
 
@@ -100,9 +100,6 @@ void app_main(void) {
                 case CMD_RESET: current_state = STATE_HOMING; break;
                 case CMD_STOP:  current_state = STATE_ALARM; break;
                 case CMD_ORIGIN: 
-                    if(current_state == STATE_IDLE) {
-                        pos_x = 0; pos_y = 0; pos_z = 0; 
-                    }
                     break;
                 case CMD_JOG_XP: 
                     if(current_state == STATE_IDLE) {
@@ -163,6 +160,7 @@ void app_main(void) {
                 case STATE_JOG:
                     GUI_INFO("Movimiento manual de los ejes");
                     SPINDLE_OFF;
+                    MOTORS_ENABLE_ALL();
                     motor_jog(true, step_mm, direction_x, direction_y, direction_z, x_jog, y_jog, z_jog);
                     break;
                 case STATE_HOMING:
@@ -171,9 +169,12 @@ void app_main(void) {
 
                 case STATE_RUNNING:
                     GUI_INFO("En proceso de maquinado...");
+                    SPINDLE_ON;
                     x_jog = false;
                     y_jog = false;
                     z_jog = false;
+                    make_a_circle(true);
+
                     break;
 
                 case STATE_PAUSE:
@@ -207,7 +208,11 @@ void app_main(void) {
                 }
                 break;
             case STATE_RUNNING:
-            // En los cuatro motores, jalan hasta 4A 
+                if(make_a_circle(false) == true){
+                    GUI_INFO("Maquinado de la figura completado");
+                    current_state = STATE_IDLE;
+                }
+                // En los cuatro motores, jalan hasta 4A 
                 if (read_I_sensor(&corrientes_actuales)) {
                     if (corrientes_actuales.s_I > 3 || corrientes_actuales.x_I > 3 ||
                         corrientes_actuales.y_I > 3 || corrientes_actuales.z_I > 3) {
@@ -215,9 +220,10 @@ void app_main(void) {
                         current_state = STATE_ALARM;
                     }
                 }
-                if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON){
+                if (SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON ||
+                    SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON){
                     current_state = STATE_ALARM;
-                } 
+                }
                 break;
             case STATE_ALARM:
                 if (to_shutdown_spindle){

@@ -73,11 +73,90 @@ void motor_init(void){
 
 }
 
-/*void move_motor_x(float x_pos, bool dir){
+bool make_a_circle(bool init){
     //dir = true --> CCW ; dir = false --> CW
     MOTORS_ENABLE_ALL();
+    static int current_segment = 0;
+    static const int total_segments = 36; //Total de segmentos en el que se divide el círculo
+    static const uint32_t T_block_ms = 300;   // Duración de cada segmento en ms
+    static TickType_t segment_start_time = 0;
+    static uint32_t x_run_time_ms = 0;
+    static uint32_t y_run_time_ms = 0;
+    static bool x_running = false;
+    static bool y_running = false;
+    static bool circle_step_init = true;
+    if(init){ //Inicializar variables una vez
+        current_segment = 0;
+        circle_step_init = true;
+        x_running = false;
+        y_running = false;
+        return false;
+    }
+    if(current_segment < total_segments){
+        if (circle_step_init) {
+            float angle = (2.0 * M_PI / total_segments) * current_segment; //ángulo en radianes
+            // Calcular el tiempo en ms para mover cada eje
+            x_run_time_ms = (uint32_t)(T_block_ms * fabs(sin(angle)));
+            y_run_time_ms = (uint32_t)(T_block_ms * fabs(cos(angle)));
 
-}*/
+            if (sin(angle) >= 0) { 
+                CCW_DIR_X;
+            } else { 
+                CW_DIR_X;
+            }
+            if (cos(angle) >= 0) { 
+                CCW_DIR_Y;
+            } else { 
+                CW_DIR_Y;
+            }
+
+            if (x_run_time_ms > 0) {
+                ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2048); // Al 50% DutyCycle
+                ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+                x_running = true;
+            }
+            if (y_run_time_ms > 0) {
+                ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 2048); // Al 50% DutyCycle
+                ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+                y_running = true;
+            }
+
+            segment_start_time = xTaskGetTickCount(); // Guardamos el tiempo de inicio en marca de tiempo
+            circle_step_init = false;               // Aún no se inicia un nuevo segmento
+        }
+
+        uint32_t elapsed_ms = pdTICKS_TO_MS(xTaskGetTickCount() - segment_start_time);
+
+        // Apagar motor X si ya cumplió su tiempo en este segmento:
+        if (x_running && (elapsed_ms >= x_run_time_ms)) {
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+            x_running = false;
+        }
+
+        // Apagar motor Y si ya cumplió su tiempo en este segmento:
+        if (y_running && (elapsed_ms >= y_run_time_ms)) {
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
+            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+            y_running = false;
+        }
+
+        if (elapsed_ms >= T_block_ms) { //Al terminar el tiempo en este segmento
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
+            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+
+            // Actualizar para seguir en un nuevo segmento:
+            current_segment++; 
+            circle_step_init = true;
+        }
+
+        return false; // El círculo todavía está en proceso
+    }
+
+    return true;
+}
 
 bool motor_jog(bool init, int step, bool dir_x, bool dir_y, bool dir_z, bool x, bool y, bool z){
     static TickType_t jog_start_tick = 0;

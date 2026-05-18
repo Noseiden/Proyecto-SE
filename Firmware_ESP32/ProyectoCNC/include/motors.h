@@ -34,9 +34,7 @@
 #define SWITCH_Z1_ON (gpio_get_level(LIMIT_SWITCH_Z1) == 1)
 
 void motor_init(void);
-void move_motor_x(float x_pos, bool dir);
-void move_motor_y(float y_pos, bool dir);
-void move_motor_z(float z_pos, bool dir);
+bool make_a_circle(bool init);
 bool motor_jog(bool init, int step, bool dir_x, bool dir_y, bool dir_z, bool x, bool y, bool z);
 bool home(bool init);
 void stop_motors(void);
