@@ -24,7 +24,7 @@ class Application(ttk.Frame):
         self.master.attributes("-fullscreen", True)
         self.master.bind("<Escape>", lambda e: self.master.attributes("-fullscreen", False))
 
-        self.camera_1 = camera.RunCamera() # Ruta del video, () se obtiene la cámara por defecto
+        self.camera_1 = camera.RunCamera(r"C:\skunk\ProyectoSE\Proyecto-SE\Firmware_ESP32\Interfaz\video.mp4") # Ruta del video, () se obtiene la cámara por defecto
         self.camera_1.start() #start de camera.py
         
         self.widgetText("CONTROL DE LA CNC", 20, 10, 10) # Texto

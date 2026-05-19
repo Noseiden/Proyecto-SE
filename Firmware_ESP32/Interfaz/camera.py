@@ -35,14 +35,11 @@ class RunCamera(): # Obtener frames de la cámara en paralelo al funcionamiento 
     
     def get(self):
         while not self.stopped:
-            if not self.ret:
-                pass
-            else:
-                try:
-                    self.ret, self.frame = self.stream.read()
-                    # if not self.ret or self.frame is None:
-                    #     self.loggerReport.logger.warning("Frame vacío en RunCamera.get()")
-                    #     return None
-                    # self.count_pieces(self.frame) # Función donde esté el código para el procesamiento del video
-                except Exception as e:
-                    self.loggerReport.logger.error("Error in get Camera " + str(e))
+            try:
+                self.ret, self.frame = self.stream.read()
+                if not self.ret:
+                    self.stream.set(cv2.CAP_PROP_POS_FRAMES, 0) # Volver al inicio del video
+                    self.ret, self.frame = self.stream.read() #Volver a leer 
+            except Exception as e:
+                self.loggerReport.logger.error("Error in get Camera " + str(e))
+                time.sleep(0.1) # Pausa para no saturar CPU si hay error continuo
