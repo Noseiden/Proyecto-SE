@@ -2,7 +2,7 @@ import logging
 from colorlog import ColoredFormatter # pip install colorlog
 
 class Logger:
-    def __init__(self, name, log_file = r"C:\skunk\ProyectoSE\Proyecto-SE\Firmware_ESP32\Interfaz\logs\app.log"): 
+    def __init__(self, name, log_file = r"Interfaz\logs\app.log"): 
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
         self.log_file = log_file 
