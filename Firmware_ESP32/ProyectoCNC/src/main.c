@@ -5,7 +5,7 @@
 #include "router_spindle.h"
 #include "rtc_ds1307.h"
 
-int step_mm = 0;
+int step_mm = 1;
 int step_received = 0;
 TickType_t timestamp_alarm = 0;
 bool to_shutdown_spindle = false;
@@ -154,7 +154,6 @@ void app_main(void) {
                 case STATE_IDLE:
                     GUI_INFO("Esperando orden de maquinado o Jog manual");
                     SPINDLE_OFF;
-                    MOTORS_DISABLE_ALL();
                     break;
 
                 case STATE_JOG:

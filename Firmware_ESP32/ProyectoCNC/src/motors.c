@@ -28,7 +28,7 @@ void motor_init(void){
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .timer_num = LEDC_TIMER_0,
         .duty_resolution = LEDC_TIMER_12_BIT, //Resolución --> 0 a 4095, pues es 12 bits
-        .freq_hz = 2000,
+        .freq_hz = 1000,
         .clk_cfg = LEDC_AUTO_CLK,
     };
     ledc_timer_config(&ledc_timer);
@@ -162,10 +162,10 @@ bool motor_jog(bool init, int step, bool dir_x, bool dir_y, bool dir_z, bool x, 
     static TickType_t jog_start_tick = 0;
     static TickType_t jog_duration_ticks = 0;
     // Pasos/mm = 3200micropasos/vuelta / 5mm/vuelta = 640 pasos/mm
-    // Frecuencia = 600mm/min * 640pasos/mm / 60 = 6.4kHz
+    // Frecuencia = 60mm/min * 640pasos/mm / 60 = 640Hz
     if(init){
-        ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, 6400);
-        float jog_duration_ms = (60.0 * step * 1000.0) / 600; //600 mm/min de velocidad
+        ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, 640);
+        float jog_duration_ms = (60.0 * step * 1000.0) / 60; //60 mm/min de velocidad
         jog_duration_ticks = pdMS_TO_TICKS(jog_duration_ms);
         jog_start_tick = xTaskGetTickCount(); //Registrar tick actual
         if(dir_x){
