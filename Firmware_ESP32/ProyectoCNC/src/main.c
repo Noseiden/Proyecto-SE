@@ -53,7 +53,7 @@ void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para c
             // Comparamos lo recibido con las palabras clave de botones
             if (p_step != NULL){
                 if(sscanf(p_step, "STEP:%d", &step_mm) == 1){  // Con sscanf, busca en STEP: un número entero(%d) para llevarlo a step_mm
-                    GUI_INFO("Paso de JOG actualizado a: %d mm", step_mm);
+                    GUI_INFO("Paso de JOG actualizado a: %d mm/min", step_mm);
                 }
             } else if (strstr((char*)data, "START"))  last_command = CMD_START;
             else if (strstr((char*)data, "PAUSE"))  last_command = CMD_PAUSE;

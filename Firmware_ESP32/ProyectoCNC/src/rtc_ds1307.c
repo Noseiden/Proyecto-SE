@@ -13,7 +13,7 @@ uint8_t decimal2bcd(uint8_t decimal){
 
 uint8_t bcd2decimal(uint8_t bcd){
     // & es operación lógica AND entre bits 
-    return ((bcd << 4) * 10) + (bcd & 0x0F);
+    return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
 
 void i2c_init(void){
@@ -90,9 +90,6 @@ void ds1307_read_time(void) {
     if (resultado != ESP_OK) { 
         GUI_ERROR("Error al leer del DS1307: %s", esp_err_to_name(resultado)); 
         return; 
-    } else {
-        GUI_ERROR(" "); 
-        return;
     }
 
     // Cada byte viene en BCD, se convierte a decimal para mostrarlo:
