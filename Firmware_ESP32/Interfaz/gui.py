@@ -47,7 +47,7 @@ class Application(ttk.Frame):
         self.labelWarn = self.widgetText("WARN: ", 15, 800, 595)
         self.labelError = self.widgetText("ERROR: ", 15, 800, 645)
         self.labelStep = self.widgetText(f"Step: {self.step}", 12, 970, 430)
-        self.widgetText("mm", 10, 1040, 432)
+        self.widgetText("mm/min", 10, 1040, 432)
         self.labelTime = self.widgetText("RTC: Cargando...", 11, 800, 520)
 
         self.showVideo()
@@ -168,9 +168,10 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.Xppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
                 self.btnXp.place(x=posx, y=posy)
+                self.btnXp.bind("<ButtonPress-1>", self.Xppressed)   # Al presionar, inicia el movimiento
+                self.btnXp.bind("<ButtonRelease-1>", self.JogReleased) # Al soltar, se detiene
             case "-X":
                 self.btnXm = tk.Button(
                     self.master,
@@ -180,9 +181,10 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.Xmpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
                 self.btnXm.place(x=posx, y=posy)
+                self.btnXm.bind("<ButtonPress-1>", self.Xmpressed)   # Al presionar, inicia el movimiento
+                self.btnXm.bind("<ButtonRelease-1>", self.JogReleased) # Al soltar, se detiene
             case "+Y":
                 self.btnYp = tk.Button(
                     self.master,
@@ -192,9 +194,10 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.Yppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
                 self.btnYp.place(x=posx, y=posy)
+                self.btnYp.bind("<ButtonPress-1>", self.Yppressed)   # Al presionar, inicia el movimiento
+                self.btnYp.bind("<ButtonRelease-1>", self.JogReleased) # Al soltar, se detiene
             case "-Y":
                 self.btnYm = tk.Button(
                     self.master,
@@ -204,9 +207,10 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.Ympressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
                 self.btnYm.place(x=posx, y=posy)
+                self.btnYm.bind("<ButtonPress-1>", self.Ympressed)   # Al presionar, inicia el movimiento
+                self.btnYm.bind("<ButtonRelease-1>", self.JogReleased) # Al soltar, se detiene
             case "+Z":
                 self.btnZp = tk.Button(
                     self.master,
@@ -216,9 +220,10 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.Zppressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
                 self.btnZp.place(x=posx, y=posy)
+                self.btnZp.bind("<ButtonPress-1>", self.Zppressed)   # Al presionar, inicia el movimiento
+                self.btnZp.bind("<ButtonRelease-1>", self.JogReleased) # Al soltar, se detiene
             case "-Z":
                 self.btnZm = tk.Button(
                     self.master,
@@ -228,9 +233,10 @@ class Application(ttk.Frame):
                     width = w,
                     height = h,
                     font=("Helvetica", sz, "bold"),
-                    command = self.Zmpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
                 self.btnZm.place(x=posx, y=posy)
+                self.btnZm.bind("<ButtonPress-1>", self.Zmpressed)   # Al presionar, inicia el movimiento
+                self.btnZm.bind("<ButtonRelease-1>", self.JogReleased) # Al soltar, se detiene
             case "+step":
                 self.btnStepp = tk.Button(
                     self.master,
@@ -310,37 +316,43 @@ class Application(ttk.Frame):
             self.labelError.config(text=" ")
         else:
             print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
-    def Zppressed(self):
+    def JogReleased(self, event=None):
+        if ser.is_open:
+            ser.write(b"JOG_RELEASED\n")
+            print("Orden de JOG_RELEASED enviada a ESP32")
+        else:
+            print("Advertencia: El puerto COM9 está desconectado.")
+    def Zppressed(self, event=None):
         if ser.is_open:
             ser.write(b"Zp\n")
             print("Orden de + Z enviada a ESP32")
         else:
-            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
-    def Zmpressed(self):
+            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")         
+    def Zmpressed(self, event=None):
         if ser.is_open:
             ser.write(b"Zm\n")
             print("Orden de - Z enviada a ESP32")
         else:
             print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
-    def Xppressed(self):
+    def Xppressed(self, event=None):
         if ser.is_open:
             ser.write(b"Xp\n")
             print("Orden de + X enviada a ESP32")
         else:
             print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
-    def Xmpressed(self):
+    def Xmpressed(self, event=None):
         if ser.is_open:
             ser.write(b"Xm\n")
             print("Orden de - X enviada a ESP32")
         else:
             print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
-    def Yppressed(self):
+    def Yppressed(self, event=None):
         if ser.is_open:
             ser.write(b"Yp\n")
             print("Orden de + Y enviada a ESP32")
         else:
             print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
-    def Ympressed(self):
+    def Ympressed(self, event=None):
         if ser.is_open:
             ser.write(b"Ym\n")
             print("Orden de - Y enviada a ESP32")

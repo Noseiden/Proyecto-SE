@@ -35,6 +35,6 @@
 
 void motor_init(void);
 bool make_a_circle(bool init);
-bool motor_jog(bool init, int step, bool dir_x, bool dir_y, bool dir_z, bool x, bool y, bool z);
+void motor_jog(int step, bool dir_x, bool dir_y, bool dir_z, bool x, bool y, bool z);
 bool home(bool init);
 void stop_motors(void);

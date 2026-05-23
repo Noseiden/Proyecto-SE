@@ -158,64 +158,40 @@ bool make_a_circle(bool init){
     return true;
 }
 
-bool motor_jog(bool init, int step, bool dir_x, bool dir_y, bool dir_z, bool x, bool y, bool z){
-    static TickType_t jog_start_tick = 0;
-    static TickType_t jog_duration_ticks = 0;
+void motor_jog(int step, bool dir_x, bool dir_y, bool dir_z, bool x, bool y, bool z){
     // Pasos/mm = 3200micropasos/vuelta / 5mm/vuelta = 640 pasos/mm
-    // Frecuencia = 60mm/min * 640pasos/mm / 60 = 640Hz
-    if(init){
-        ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, 640);
-        float jog_duration_ms = (60.0 * step * 1000.0) / 60; //60 mm/min de velocidad
-        jog_duration_ticks = pdMS_TO_TICKS(jog_duration_ms);
-        jog_start_tick = xTaskGetTickCount(); //Registrar tick actual
-        if(dir_x){
-            CCW_DIR_X;
-        } else {
-            CW_DIR_X;
-        }
-        if(dir_y){
-            CCW_DIR_Y;
-        } else {
-            CW_DIR_Y;
-        }
-        if(dir_z){
-            CCW_DIR_Z;
-        } else {
-        CW_DIR_Z;
+    // Frecuencia = velocidad * 640pasos/mm / 60segundos --> velocidad en mm/min
+    int pwm_freq = (int)((step * 640.0) / 60.0);
+    ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, pwm_freq);
+
+    if(dir_x){
+        CCW_DIR_X;
+    } else {
+        CW_DIR_X;
     }
-        if(x){
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2048); //Al 50% DutyCyle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-        }
-        if(y){
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 2048); //Al 50% DutyCyle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-        }
-        if(z){
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 2048); //Al 50% DutyCyle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
-        }
-        return false;
+    if(dir_y){
+        CCW_DIR_Y;
+    } else {
+        CW_DIR_Y;
     }
-    if((xTaskGetTickCount() - jog_start_tick) >= jog_duration_ticks){ //Cuando termine de avanzar, detiene el motor
-        if(x && !init){
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-            x = false;
-        }
-        if(y && !init){
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-            y = false;
-        }
-        if(z && !init){
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
-            z = false;
-        }
-        return true; //Ya se detuvo
-    }   
-    return false; //No ha terminado de avanzar
+    if(dir_z){
+        CCW_DIR_Z;
+    } else {
+    CW_DIR_Z;
+    }
+    
+    if(x){
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    }
+    if(y){
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+    }
+    if(z){
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
+    }
 }
 
 bool home(bool init){
