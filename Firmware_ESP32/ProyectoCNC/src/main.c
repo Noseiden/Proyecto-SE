@@ -94,6 +94,7 @@ void app_main(void) {
     ds1307_write_hours(0, 0, 12, 5, 29, 5, 26); // 12:00:00, día 5 de la semana, 29/05/26 
     TickType_t ultima_lectura_rtc = xTaskGetTickCount(); //control del tiempo RTC
     current_state = STATE_IDLE;
+    bool paused = false;
     while (1) {
         if (last_command != CMD_NONE) { //Las transiciones a cada estado por botones de GUI
             switch(last_command) {
@@ -165,6 +166,7 @@ void app_main(void) {
                 case STATE_IDLE:
                     GUI_INFO("Esperando orden de maquinado o Jog manual");
                     SPINDLE_OFF;
+                    paused = false;
                     break;
 
                 case STATE_JOG:
@@ -184,13 +186,18 @@ void app_main(void) {
                     x_jog = false;
                     y_jog = false;
                     z_jog = false;
-                    make_a_circle(true);
+                    if(paused == false){
+                        make_a_circle(true, false, -1);
+                    } else{
+                        make_a_circle(true, true, segment);
+                    }
                     break;
 
                 case STATE_PAUSE:
                     GUI_INFO("Continuar el proceso presionando Start");
                     GUI_WARN("Ruteadora aún encendida al pausar el proceso");
                     SPINDLE_ON;
+                    paused = true;
                     stop_motors();
                     break;
 
@@ -213,7 +220,7 @@ void app_main(void) {
                 }
                 break;
             case STATE_RUNNING:
-                if(make_a_circle(false) == true){
+                if(make_a_circle(false, false, -1) == true){
                     GUI_INFO("Maquinado de la figura completado");
                     current_state = STATE_IDLE;
                 }
@@ -233,11 +240,11 @@ void app_main(void) {
                         current_state = STATE_ALARM;
                     }
                 }
-                if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON){
-                    //SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON || 
-                    //Probrar la anterior condición pero primero haciendo homing y luego mover con Jog un poco
+                /*if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON ||
+                    SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON){
+                    //La anterior condición solo funciona adecuadamente si se mueven los motores de las esquinas al iniciar
                     current_state = STATE_ALARM;
-                }
+                }*/
                 break;
             case STATE_ALARM:
                 if (to_shutdown_spindle){

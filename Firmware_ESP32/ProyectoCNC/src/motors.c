@@ -1,6 +1,8 @@
 #include "motors.h"
 #include "system_lib.h"
 
+int segment = -1; //variable global externa declarada en el header motors.h
+
 void motor_init(void){
     gpio_config_t limit_S = { //Sensores inicio y final de carrera en cada eje
         .pin_bit_mask = (1ULL << LIMIT_SWITCH_X0) | (1ULL << LIMIT_SWITCH_X1) | 
@@ -73,12 +75,13 @@ void motor_init(void){
 
 }
 
-bool make_a_circle(bool init){
+bool make_a_circle(bool init, bool pause, int last_segm){
     //dir = true --> CCW ; dir = false --> CW
     MOTORS_ENABLE_ALL();
     static int current_segment = 0;
+    // 360° / 36 = 10°/segmento
     static const int total_segments = 36; //Total de segmentos en el que se divide el círculo
-    static const uint32_t T_block_ms = 300;   // Duración de cada segmento en ms
+    static const uint32_t T_block_ms = 500;   // Duración de cada segmento en ms
     static TickType_t segment_start_time = 0;
     static uint32_t x_run_time_ms = 0;
     static uint32_t y_run_time_ms = 0;
@@ -90,11 +93,20 @@ bool make_a_circle(bool init){
         circle_step_init = true;
         x_running = false;
         y_running = false;
+        ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, 2000);
+        if(pause && last_segm != -1){
+            current_segment = last_segm; //Para después de darle al botón pausa y guardar la posición actual
+        }
         return false;
     }
     if(current_segment < total_segments){
         if (circle_step_init) {
-            float angle = (2.0 * M_PI / total_segments) * current_segment; //ángulo en radianes
+            float angle;
+            if(pause == false){
+                angle = (2.0 * M_PI / total_segments) * current_segment; //ángulo en radianes
+            } else {
+                angle = (2.0 * M_PI / total_segments) * last_segm; 
+            }
             // Calcular el tiempo en ms para mover cada eje
             x_run_time_ms = (uint32_t)(T_block_ms * fabs(sin(angle)));
             y_run_time_ms = (uint32_t)(T_block_ms * fabs(cos(angle)));
@@ -146,10 +158,12 @@ bool make_a_circle(bool init){
             ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
             ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
             ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-
+            
             // Actualizar para seguir en un nuevo segmento:
             current_segment++; 
+            segment = current_segment; 
             circle_step_init = true;
+
         }
 
         return false; // El círculo todavía está en proceso
