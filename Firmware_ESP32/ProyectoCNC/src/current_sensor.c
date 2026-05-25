@@ -1,6 +1,5 @@
 #include "current_sensor.h"
 #include "system_lib.h"
-adc_oneshot_unit_handle_t adc1_handle;
 void I_sensor_init(void){
     timer_config_t config = {
         .divider = 80,
@@ -34,15 +33,16 @@ void I_sensor_init(void){
     adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_7,
     &chan_config);
     
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
-    timer_start(TIMER_GROUP_0, TIMER_0);
+    /*timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+    timer_start(TIMER_GROUP_0, TIMER_0);*/
 }
-static float calc_I(int raw) { //static para que sea una función privada de este archivo.c
+float calc_I(int raw) { //static solo si se quiere que sea una función privada de este archivo.c
     //Trabajando en mV, pasar a A, según datasheet del sensor de corriente
     float mv = ((float)raw * 3300.0f) / 4095.0f; //f para indicar que es número punto flotante
-    return (mv - 2500.0f) / 100.0f; //offset de 2.5V y 100mV/A de sensibilidad del sensor de corriente 20A
+    //En datasheet, offset de 2.5V y 100mV/A de sensibilidad del sensor de corriente 20A
+    return (0.0141f * mv) - 23.619f; //Con el op-amp usado, se cambia a esta escalización
 }
-bool read_I_sensor(consumo_cnc_t *data){
+/*bool read_I_sensor(consumo_cnc_t *data){
     uint64_t timer_value; // timer para ADCs
     timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &timer_value); //para muestreo del ADC
     if(timer_value >= SAMPLE_PERIOD_US){
@@ -61,4 +61,4 @@ bool read_I_sensor(consumo_cnc_t *data){
         return true; //Hay datos leídos
     }
     return false; //Aún no ha pasado el tiempo de muestreo
-}
+}*/

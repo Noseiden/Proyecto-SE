@@ -86,6 +86,7 @@ void app_main(void) {
     motor_init(); // Configuración de los motores de los ejes y finales de carrera
     I_sensor_init(); //Configuración ADC de los sensores de corriente
     consumo_cnc_t corrientes_actuales;
+    int adc_raw;
     cnc_state_t last_reported_state = -1;
     xTaskCreate(task_receive_gui, "GUI_Task", 4096, NULL, 5, NULL); //para que FreeRTOS identifique la tarea 
     i2c_init();
@@ -220,21 +221,27 @@ void app_main(void) {
                     GUI_INFO("Maquinado de la figura completado");
                     current_state = STATE_IDLE;
                 }
-                // En los cuatro motores, jalan hasta 4A 
-                if (read_I_sensor(&corrientes_actuales)) {
-                    if (corrientes_actuales.s_I > 2.5) {
-                        GUI_ERROR("Sobrecarga en la Ruteadora: %.2f A", corrientes_actuales.s_I);
-                        current_state = STATE_ALARM;
-                    } else if (corrientes_actuales.x_I > 4){
-                        GUI_ERROR("Sobrecarga en el motor X: %.2f A", corrientes_actuales.x_I);
-                        current_state = STATE_ALARM;
-                    } else if (corrientes_actuales.y_I > 4){
-                        GUI_ERROR("Sobrecarga en el motor Y: %.2f A", corrientes_actuales.y_I);
-                        current_state = STATE_ALARM;
-                    } else if (corrientes_actuales.z_I > 4){
-                        GUI_ERROR("Sobrecarga en el motor Z: %.2f A", corrientes_actuales.z_I);
-                        current_state = STATE_ALARM;
-                    }
+                adc_oneshot_read(adc1_handle, ADC_CHANNEL_7, &adc_raw); 
+                corrientes_actuales.s_I = calc_I(adc_raw); 
+                adc_oneshot_read(adc1_handle, ADC_CHANNEL_0, &adc_raw); 
+                corrientes_actuales.x_I = calc_I(adc_raw); 
+                adc_oneshot_read(adc1_handle, ADC_CHANNEL_3, &adc_raw);
+                corrientes_actuales.y_I = calc_I(adc_raw);
+                adc_oneshot_read(adc1_handle, ADC_CHANNEL_6, &adc_raw);
+                corrientes_actuales.z_I = calc_I(adc_raw);
+
+                if (corrientes_actuales.s_I > 2.50f) {
+                    GUI_ERROR("Sobrecarga en la Ruteadora: %.2f A", corrientes_actuales.s_I);
+                    current_state = STATE_ALARM;
+                } else if (corrientes_actuales.x_I > 4){
+                    GUI_ERROR("Sobrecarga en el motor X: %.2f A", corrientes_actuales.x_I);
+                    current_state = STATE_ALARM;
+                } else if (corrientes_actuales.y_I > 4){
+                    GUI_ERROR("Sobrecarga en el motor Y: %.2f A", corrientes_actuales.y_I);
+                    current_state = STATE_ALARM;
+                } else if (corrientes_actuales.z_I > 4){
+                    GUI_ERROR("Sobrecarga en el motor Z: %.2f A", corrientes_actuales.z_I);
+                    current_state = STATE_ALARM;
                 }
                 /*if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON ||
                     SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON){
@@ -257,10 +264,10 @@ void app_main(void) {
         }
 
         if ((xTaskGetTickCount() - ultima_lectura_rtc) >= pdMS_TO_TICKS(1000)) { //Cada segundo (Timestamp polling)
-            ultima_lectura_rtc = xTaskGetTickCount(); // Actualizaz el contador
+            ultima_lectura_rtc = xTaskGetTickCount(); // Actualiza el contador
             ds1307_read_time(); // enviará y mostrará la hora actual por UART
         }
         
-        vTaskDelay(pdMS_TO_TICKS(20)); // Pequeña espera para no saturar CPU
+        vTaskDelay(pdMS_TO_TICKS(20)); // Pequeña espera para no saturar CPU y t<mbién muestreo de ADC
     }
 }
