@@ -52,6 +52,7 @@ void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para c
             // Comparamos lo recibido con las palabras clave de botones
             if (p_step != NULL){
                 if(sscanf(p_step, "STEP:%d", &step_mm) == 1){  // Con sscanf, busca en STEP: un número entero(%d) para llevarlo a step_mm
+                    ds1307_read_time(0);
                     GUI_INFO("Paso de JOG actualizado a: %d mm/min", step_mm);
                 }
             } else if (strstr((char*)data, "START"))  last_command = CMD_START;
@@ -91,7 +92,6 @@ void app_main(void) {
     xTaskCreate(task_receive_gui, "GUI_Task", 4096, NULL, 5, NULL); //para que FreeRTOS identifique la tarea 
     i2c_init();
     ds1307_write_hours(0, 0, 12, 5, 29, 5, 26); // 12:00:00, día 5 de la semana, 29/05/26 
-    TickType_t ultima_lectura_rtc = xTaskGetTickCount(); //control del tiempo RTC
     current_state = STATE_IDLE;
     bool paused = false;
     while (1) {
@@ -161,23 +161,29 @@ void app_main(void) {
         if (current_state != last_reported_state){ //Para enviar los mensajes de logging una vez se ha cambiado de estado
             switch (current_state) { //Lo que hace cada estado
                 case STATE_IDLE:
-                    GUI_INFO("Esperando orden de maquinado o Jog manual");
+                    ds1307_read_time(0);
+                    GUI_INFO("Esperando órdenes o movimiento manual");
                     SPINDLE_OFF;
                     paused = false;
                     break;
 
                 case STATE_JOG:
+                    ds1307_read_time(0);
                     GUI_INFO("Movimiento manual de los ejes");
                     SPINDLE_OFF;
                     MOTORS_ENABLE_ALL();
                     motor_jog(step_mm, direction_x, direction_y, direction_z, x_jog, y_jog, z_jog);
                     break;
                 case STATE_HOMING:
+                    ds1307_read_time(0);
                     GUI_INFO("Retorno a posición inicial");
+                    ds1307_read_time(1);
+                    GUI_WARN("Primero eje Z, luego X y Y");
                     home(true);
                     break;
 
                 case STATE_RUNNING:
+                    ds1307_read_time(0);
                     GUI_INFO("En proceso de maquinado...");
                     SPINDLE_ON;
                     x_jog = false;
@@ -191,15 +197,19 @@ void app_main(void) {
                     break;
 
                 case STATE_PAUSE:
+                    ds1307_read_time(0);
                     GUI_INFO("Continuar el proceso presionando Start");
-                    GUI_WARN("Ruteadora aún encendida al pausar el proceso");
+                    ds1307_read_time(1);
+                    GUI_WARN("Spindle aún encendido");
                     SPINDLE_ON;
                     paused = true;
                     stop_motors();
                     break;
 
                 case STATE_ALARM:
+                    ds1307_read_time(0);
                     GUI_INFO("Proceso detenido completamente");
+                    ds1307_read_time(1);
                     GUI_WARN("Pérdida de pasos");
                     stop_motors();
                     timestamp_alarm = xTaskGetTickCount(); //Inicia tiempo para Spindle
@@ -218,6 +228,7 @@ void app_main(void) {
                 break;
             case STATE_RUNNING:
                 if(make_a_circle(false, false, -1) == true){
+                    ds1307_read_time(0);
                     GUI_INFO("Maquinado de la figura completado");
                     current_state = STATE_IDLE;
                 }
@@ -231,21 +242,27 @@ void app_main(void) {
                 corrientes_actuales.z_I = calc_I(adc_raw);
 
                 if (corrientes_actuales.s_I > 2.50f) {
+                    ds1307_read_time(2);
                     GUI_ERROR("Sobrecarga en la Ruteadora: %.2f A", corrientes_actuales.s_I);
                     current_state = STATE_ALARM;
                 } else if (corrientes_actuales.x_I > 4){
+                    ds1307_read_time(2);
                     GUI_ERROR("Sobrecarga en el motor X: %.2f A", corrientes_actuales.x_I);
                     current_state = STATE_ALARM;
                 } else if (corrientes_actuales.y_I > 4){
+                    ds1307_read_time(2);
                     GUI_ERROR("Sobrecarga en el motor Y: %.2f A", corrientes_actuales.y_I);
                     current_state = STATE_ALARM;
                 } else if (corrientes_actuales.z_I > 4){
+                    ds1307_read_time(2);
                     GUI_ERROR("Sobrecarga en el motor Z: %.2f A", corrientes_actuales.z_I);
                     current_state = STATE_ALARM;
                 }
                 /*if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON ||
                     SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON){
                     //La anterior condición solo funciona adecuadamente si se mueven los motores de las esquinas al iniciar
+                    ds1307_read_time(2);
+                    GUI_ERROR("Paso del límite del área de trabajo")
                     current_state = STATE_ALARM;
                 }*/
                 break;
@@ -254,6 +271,7 @@ void app_main(void) {
                     if ((xTaskGetTickCount() - timestamp_alarm) >= pdMS_TO_TICKS(2000)){ // Control por Marca de Tiempo (Timestamp Polling).
                         SPINDLE_OFF;
                         to_shutdown_spindle = false;
+                        ds1307_read_time(0);
                         GUI_INFO("Ruteadora apagada por seguridad tras 2s");
                         current_state = STATE_IDLE;
                     }
@@ -261,11 +279,6 @@ void app_main(void) {
                 break;
             default:
                 break;
-        }
-
-        if ((xTaskGetTickCount() - ultima_lectura_rtc) >= pdMS_TO_TICKS(1000)) { //Cada segundo (Timestamp polling)
-            ultima_lectura_rtc = xTaskGetTickCount(); // Actualiza el contador
-            ds1307_read_time(); // enviará y mostrará la hora actual por UART
         }
         
         vTaskDelay(pdMS_TO_TICKS(20)); // Pequeña espera para no saturar CPU y t<mbién muestreo de ADC

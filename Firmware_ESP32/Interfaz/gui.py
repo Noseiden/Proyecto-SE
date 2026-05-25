@@ -42,12 +42,14 @@ class Application(ttk.Frame):
         self.createButton("-step", 8, 1, 15, 925, 460)
         self.createButton("+step", 8, 1, 15, 1035, 460)
         self.start_serial_listener() #Recepción de Logging de ESP32
-        self.labelInfo = self.widgetText("INFO: ", 15, 800, 545)
-        self.labelWarn = self.widgetText("WARN: ", 15, 800, 595)
-        self.labelError = self.widgetText("ERROR: ", 15, 800, 645)
+        self.labelTime_i = self.widgetText("", 10, 790, 545)
+        self.labelInfo = self.widgetText("INFO: ", 11, 920, 545)
+        self.labelTime_w = self.widgetText("", 10, 790, 595)
+        self.labelWarn = self.widgetText("WARN: ", 11, 920, 595)
+        self.labelTime_e = self.widgetText("", 10, 790, 645)
+        self.labelError = self.widgetText("ERROR: ", 11, 920, 645)
         self.labelStep = self.widgetText(f"Step: {self.step}", 12, 970, 430)
         self.widgetText("mm/min", 10, 1040, 432)
-        self.labelTime = self.widgetText("RTC: Cargando...", 11, 800, 520)
 
         self.showVideo()
         print("Start Video")
@@ -87,16 +89,22 @@ class Application(ttk.Frame):
     def update_gui_log(self, linea):
         if "[INFO]" in linea:
             texto = linea.replace("[INFO] ", "")
-            self.labelInfo.config(text=f"INFO: {texto}", fg="green")
+            self.labelInfo.config(text=f"- INFO: {texto}", fg="green")
         elif "[WARN]" in linea:
             texto = linea.replace("[WARN] ", "")
-            self.labelWarn.config(text=f"WARN: {texto}", fg="orange")
+            self.labelWarn.config(text=f"- WARN: {texto}", fg="orange")
         elif "[ERROR]" in linea:
             texto = linea.replace("[ERROR] ", "")
-            self.labelError.config(text=f"ERROR: {texto}", fg="red")
-        elif "[RTC]" in linea:
-            texto = linea.replace("[RTC] ", "")
-            self.labelTime.config(text=f"Tiempo real: {texto}", fg="#000080")
+            self.labelError.config(text=f"- ERROR: {texto}", fg="red")
+        elif "[RTCi]" in linea:
+            texto = linea.replace("[RTCi] ", "")
+            self.labelTime_i.config(text=f"{texto}", fg="green")
+        elif "[RTCw]" in linea:
+            texto = linea.replace("[RTCw] ", "")
+            self.labelTime_w.config(text=f"{texto}", fg="orange")
+        elif "[RTCe]" in linea:
+            texto = linea.replace("[RTCe] ", "")
+            self.labelTime_e.config(text=f"{texto}", fg="red")
     
     def widgetText(self, title, sz, xpos, ypos):
         self.fontLabelText = font.Font(

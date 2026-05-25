@@ -59,7 +59,7 @@ void ds1307_write_hours(uint8_t seconds, uint8_t minutes, uint8_t hour,
     } 
 }
 
-void ds1307_read_time(void) {  
+void ds1307_read_time(int i) {  //0: INFO, 1: WARN, 2:ERROR
     uint8_t datos[7]; // Buffer con los 7 bytes leídos (un byte por registro)
     i2c_cmd_handle_t cmd = i2c_cmd_link_create(); 
     // Leer desde la dirección 0x00. Inicialización:
@@ -97,12 +97,19 @@ void ds1307_read_time(void) {
     uint8_t segundos = bcd2decimal(datos[0] & 0x7F); 
     uint8_t minutos  = bcd2decimal(datos[1] & 0x7F); 
     uint8_t horas    = bcd2decimal(datos[2] & 0x3F); 
-    uint8_t dia      = bcd2decimal(datos[3] & 0x07); 
     uint8_t fecha    = bcd2decimal(datos[4] & 0x3F); 
     uint8_t mes      = bcd2decimal(datos[5] & 0x1F); 
     uint8_t anio     = bcd2decimal(datos[6]); 
  
     //Enviar como Log:
-    gui_send_log("RTC", "%02d/%02d/20%02d  %02d:%02d:%02d , Día semana: %d", 
-             fecha, mes, anio, horas, minutos, segundos, dia); 
+    if(i == 0){
+        gui_send_log("RTCi", "%02d/%02d/20%02d  %02d:%02d:%02d",
+                    fecha, mes, anio, horas, minutos, segundos); 
+    } else if (i == 1){
+        gui_send_log("RTCw", "%02d/%02d/20%02d  %02d:%02d:%02d", 
+                    fecha, mes, anio, horas, minutos, segundos); 
+    } else if (i == 2){
+        gui_send_log("RTCe", "%02d/%02d/20%02d  %02d:%02d:%02d", 
+                    fecha, mes, anio, horas, minutos, segundos); 
+    }
 } 

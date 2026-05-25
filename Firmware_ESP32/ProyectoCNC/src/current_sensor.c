@@ -1,5 +1,6 @@
 #include "current_sensor.h"
 #include "system_lib.h"
+adc_oneshot_unit_handle_t adc1_handle = 0;
 void I_sensor_init(void){
     timer_config_t config = {
         .divider = 80,
