@@ -16,7 +16,6 @@ typedef enum { //botones de GUI
     CMD_PAUSE, 
     CMD_STOP, 
     CMD_RESET, 
-    CMD_ORIGIN, 
     CMD_JOG_XP,
     CMD_JOG_XM,
     CMD_JOG_YP,
@@ -65,7 +64,6 @@ void task_receive_gui(void *pvParameters){ //Recepción de botones de GUI para c
             else if (strstr((char*)data, "Xm"))     last_command = CMD_JOG_XM;
             else if (strstr((char*)data, "Yp"))     last_command = CMD_JOG_YP;
             else if (strstr((char*)data, "Ym"))     last_command = CMD_JOG_YM;
-            else if (strstr((char*)data, "ORIGIN")) last_command = CMD_ORIGIN;
             else if (strstr((char*)data, "JOG_RELEASED")) last_command = CMD_JOG_RELEASED;
         }
         vTaskDelay(pdMS_TO_TICKS(10)); //Para evitar WatchDog
@@ -102,8 +100,6 @@ void app_main(void) {
                 case CMD_PAUSE: current_state = STATE_PAUSE; break;
                 case CMD_RESET: current_state = STATE_HOMING; break;
                 case CMD_STOP:  current_state = STATE_ALARM; break;
-                case CMD_ORIGIN: 
-                    break;
                 case CMD_JOG_XP: 
                     if(current_state == STATE_IDLE) {
                         current_state = STATE_JOG; 
@@ -226,16 +222,16 @@ void app_main(void) {
                 }
                 // En los cuatro motores, jalan hasta 4A 
                 if (read_I_sensor(&corrientes_actuales)) {
-                    if (corrientes_actuales.s_I > 3) {
+                    if (corrientes_actuales.s_I > 2.5) {
                         GUI_ERROR("Sobrecarga en la Ruteadora: %.2f A", corrientes_actuales.s_I);
                         current_state = STATE_ALARM;
-                    } else if (corrientes_actuales.x_I > 3){
+                    } else if (corrientes_actuales.x_I > 4){
                         GUI_ERROR("Sobrecarga en el motor X: %.2f A", corrientes_actuales.x_I);
                         current_state = STATE_ALARM;
-                    } else if (corrientes_actuales.y_I > 3){
+                    } else if (corrientes_actuales.y_I > 4){
                         GUI_ERROR("Sobrecarga en el motor Y: %.2f A", corrientes_actuales.y_I);
                         current_state = STATE_ALARM;
-                    } else if (corrientes_actuales.z_I > 3){
+                    } else if (corrientes_actuales.z_I > 4){
                         GUI_ERROR("Sobrecarga en el motor Z: %.2f A", corrientes_actuales.z_I);
                         current_state = STATE_ALARM;
                     }

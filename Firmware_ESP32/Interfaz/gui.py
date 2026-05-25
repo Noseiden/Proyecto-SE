@@ -35,7 +35,6 @@ class Application(ttk.Frame):
         self.createButton("Reset", 10, 4, 15, 615, 550)
         self.createButton("+Z", 6, 2, 15, 994, 70)
         self.createButton("-Z", 8, 2, 15, 980, 140)
-        self.createButton("origin", 5, 2, 15, 1000, 220)
         self.createButton("-X", 8, 2, 15, 885, 300)
         self.createButton("+X", 6, 2, 15, 830, 370)
         self.createButton("-Y", 8, 2, 15, 1075, 300)
@@ -261,18 +260,6 @@ class Application(ttk.Frame):
                     command = self.Stepmpressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
                 )
                 self.btnStepm.place(x=posx, y=posy)
-            case "origin":
-                self.btnO = tk.Button(
-                    self.master,
-                    text="O",
-                    bg = "#5F5F5F",
-                    fg = '#ffffff',
-                    width = w,
-                    height = h,
-                    font=("Helvetica", sz, "bold"), 
-                    command = self.Opressed #FUNCIÓN QUE CONTIENE LO QUE HARÁ ESTE BOTÓN
-                )
-                self.btnO.place(x=posx, y=posy)
 
     def Startpressed(self):
         if ser.is_open: # Enviará datos siempre que el cable USB esté conectado
@@ -377,12 +364,6 @@ class Application(ttk.Frame):
                 print(f"Step enviado a ESP32: {mensaje.strip()}")
             else:
                 print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
-    def Opressed(self):
-        if ser.is_open:
-            ser.write(b"ORIGIN\n")
-            print("Orden de origen enviada a ESP32")
-        else:
-            print("Advertencia: El puerto COM9 está desconectado. No se envió el mensaje")
     
         
     def showVideo(self): #Actualiza cada frame para mostrar video continuo
