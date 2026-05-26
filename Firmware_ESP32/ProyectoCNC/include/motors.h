@@ -2,17 +2,13 @@
 #include <stdbool.h>
 // \ para continuar en la siguiente línea de código
 // LÓGICA INVERSA por uso de BJTs:
-#define MOTORS_DISABLE_ALL() do { \
-    gpio_set_level(ENA_MOTOR_X, 0); \
-    gpio_set_level(ENA_MOTOR_Y, 0); \
-    gpio_set_level(ENA_MOTOR_Z, 0); \
-} while(0) //Do-while(0) para agregar correctamente el ";" una vez en la etapa de preprocesado
-//Esto podría haber sido una función, pero es más óptimo implementarlo en una macro o máscara que solo se expande antes de compilar
-#define MOTORS_ENABLE_ALL() do { \
-    gpio_set_level(ENA_MOTOR_X, 0); \
-    gpio_set_level(ENA_MOTOR_Y, 0); \
-    gpio_set_level(ENA_MOTOR_Z, 0); \
-} while(0)
+#define MOTOR_X_DISABLED gpio_set_level (ENA_MOTOR_X, 1) 
+#define MOTOR_Y_DISABLED gpio_set_level(ENA_MOTOR_Y, 1)
+#define MOTOR_Z_DISABLED gpio_set_level(ENA_MOTOR_Z, 1)
+#define MOTOR_X_ENABLED gpio_set_level (ENA_MOTOR_X, 0) 
+#define MOTOR_Y_ENABLED gpio_set_level(ENA_MOTOR_Y, 0)
+#define MOTOR_Z_ENABLED gpio_set_level(ENA_MOTOR_Z, 0)
+
 #define CW_DIR_X gpio_set_level(DIR_MOTOR_X, 1) 
 #define CCW_DIR_X gpio_set_level(DIR_MOTOR_X, 0)
 #define CW_DIR_Y gpio_set_level(DIR_MOTOR_Y, 1)

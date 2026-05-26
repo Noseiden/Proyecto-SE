@@ -168,10 +168,7 @@ void app_main(void) {
                     break;
 
                 case STATE_JOG:
-                    ds1307_read_time(0);
-                    GUI_INFO("Movimiento manual de los ejes");
                     SPINDLE_OFF;
-                    MOTORS_ENABLE_ALL();
                     motor_jog(step_mm, direction_x, direction_y, direction_z, x_jog, y_jog, z_jog);
                     break;
                 case STATE_HOMING:
@@ -186,6 +183,8 @@ void app_main(void) {
                     ds1307_read_time(0);
                     GUI_INFO("En proceso de maquinado...");
                     SPINDLE_ON;
+                    ds1307_read_time(1);
+                    GUI_WARN("Despeje la zona");
                     x_jog = false;
                     y_jog = false;
                     z_jog = false;
@@ -258,13 +257,13 @@ void app_main(void) {
                     GUI_ERROR("Sobrecarga en el motor Z: %.2f A", corrientes_actuales.z_I);
                     current_state = STATE_ALARM;
                 }
-                /*if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON ||
+                if (SWITCH_X1_ON || SWITCH_Y1_ON || SWITCH_Z1_ON ||
                     SWITCH_X0_ON || SWITCH_Y0_ON || SWITCH_Z0_ON){
                     //La anterior condición solo funciona adecuadamente si se mueven los motores de las esquinas al iniciar
                     ds1307_read_time(2);
-                    GUI_ERROR("Paso del límite del área de trabajo")
+                    GUI_ERROR("Pasó el límite del área de trabajo");
                     current_state = STATE_ALARM;
-                }*/
+                }
                 break;
             case STATE_ALARM:
                 if (to_shutdown_spindle){
