@@ -203,51 +203,27 @@ void motor_jog(int step, bool dir_x, bool dir_y, bool dir_z, bool x, bool y, boo
     if(x){
         MOTOR_X_ENABLED;
         MOTOR_Y_DISABLED;
-        if((SWITCH_X1_ON && dir_x) || (SWITCH_X0_ON && dir_x == false)){ //Prevención para no superar límites de máquina
-            ds1307_read_time(2);
-            GUI_ERROR("Pasó el límite del área de trabajo");
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-            MOTOR_X_DISABLED;
-        } else {
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2048); //Al 50% DutyCyle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-            ds1307_read_time(0);
-            GUI_INFO("Movimiento manual del eje X");
-        }
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+        ds1307_read_time(0);
+        GUI_INFO("Movimiento manual del eje X");
     }
     if(y){
         MOTOR_X_DISABLED;
         MOTOR_Y_ENABLED;
-        if((SWITCH_Y1_ON && dir_y) || (SWITCH_Y0_ON && dir_y == false)){ //Prevención para no superar límites de máquina
-            ds1307_read_time(2);
-            GUI_ERROR("Pasó el límite del área de trabajo");
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-            MOTOR_Y_DISABLED;
-        } else {
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 2048); //Al 50% DutyCyle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-            ds1307_read_time(0);
-            GUI_INFO("Movimiento manual del eje Y");
-        }
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+        ds1307_read_time(0);
+        GUI_INFO("Movimiento manual del eje Y");
     }
     if(z){
         MOTOR_X_DISABLED;
         MOTOR_Y_DISABLED;
         MOTOR_Z_ENABLED;
-        if((SWITCH_Z0_ON && dir_z) || (SWITCH_Z1_ON && dir_z == false)){ //Prevención para no superar límites de máquina
-            ds1307_read_time(2);
-            GUI_ERROR("Pasó el límite del área de trabajo");
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
-            MOTOR_Z_DISABLED;
-        } else {
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 2048); //Al 50% DutyCyle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
-            ds1307_read_time(0);
-            GUI_INFO("Movimiento manual del eje Z");
-        }
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 2048); //Al 50% DutyCyle
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
+        ds1307_read_time(0);
+        GUI_INFO("Movimiento manual del eje Z");
     }
 }
 

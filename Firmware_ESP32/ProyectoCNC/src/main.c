@@ -220,6 +220,38 @@ void app_main(void) {
             last_reported_state = current_state; //Guardamos el estado actual
         }
         switch(current_state){ //Acciones continuas mientras se esté en el estado
+            case STATE_JOG:
+                if(x_jog){
+                    if((SWITCH_X1_ON && direction_x) || (SWITCH_X0_ON && direction_x == false)){ //Prevención para no superar límites de máquina
+                        ds1307_read_time(2);
+                        GUI_ERROR("Pasó el límite del área de trabajo");
+                        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+                        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+                        MOTOR_X_DISABLED;
+                        current_state = STATE_IDLE;
+                    }
+                }
+                if(y_jog){
+                    if((SWITCH_Y1_ON && direction_y) || (SWITCH_Y0_ON && direction_y == false)){ //Prevención para no superar límites de máquina
+                        ds1307_read_time(2);
+                        GUI_ERROR("Pasó el límite del área de trabajo");
+                        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
+                        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+                        MOTOR_Y_DISABLED;
+                        current_state = STATE_IDLE;
+                    }
+                }
+                if(z_jog){
+                    if((SWITCH_Z0_ON && direction_z) || (SWITCH_Z1_ON && direction_z == false)){ //Prevención para no superar límites de máquina
+                        ds1307_read_time(2);
+                        GUI_ERROR("Pasó el límite del área de trabajo");
+                        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
+                        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
+                        MOTOR_Z_DISABLED;
+                        current_state = STATE_IDLE;
+                    }
+                }
+                break;
             case STATE_HOMING:
                 if(home(false) == true){
                     current_state = STATE_IDLE;
