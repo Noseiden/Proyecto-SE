@@ -87,7 +87,7 @@ bool make_a_circle(bool init, bool pause, int last_segm){
     static int current_segment = 0;
     // 360° / 36 = 10°/segmento
     static const int total_segments = 36; //Total de segmentos en el que se divide el círculo
-    static const uint32_t T_block_ms = 500;   // Duración de cada segmento en ms
+    static const uint32_t T_block_ms = 1000;   // Duración de cada segmento en ms
     static TickType_t segment_start_time = 0;
     static uint32_t x_run_time_ms = 0;
     static uint32_t y_run_time_ms = 0;
@@ -99,7 +99,7 @@ bool make_a_circle(bool init, bool pause, int last_segm){
         circle_step_init = true;
         x_running = false;
         y_running = false;
-        ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, 2000);
+        ledc_set_freq(LEDC_LOW_SPEED_MODE, LEDC_TIMER_0, 4000);
         if(pause && last_segm != -1){
             current_segment = last_segm; //Para después de darle al botón pausa y guardar la posición actual
         }
