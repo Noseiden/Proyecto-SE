@@ -91,7 +91,7 @@ void app_main(void) {
     cnc_state_t last_reported_state = -1;
     xTaskCreate(task_receive_gui, "GUI_Task", 4096, NULL, 5, NULL); //para que FreeRTOS identifique la tarea 
     i2c_init();
-    ds1307_write_hours(0, 0, 12, 5, 29, 5, 26); // 12:00:00, día 5 de la semana, 29/05/26 
+    ds1307_write_hours(0, 0, 9, 5, 29, 5, 26); // 09:00:00, día 5 de la semana, 29/05/26 
     current_state = STATE_IDLE;
     bool paused = false;
     while (1) {

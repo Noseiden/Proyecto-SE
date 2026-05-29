@@ -246,25 +246,25 @@ bool home(bool init){
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
         return false;
     }
-    if(SWITCH_Z0_ON && !z_homed){ //Hasta que llegue a su posición inicial
+    if(SWITCH_Z1_ON && !z_homed){ //Hasta que llegue a su posición inicial
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, 0);
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
         z_homed = true; 
     }
-    if(SWITCH_Z0_ON && !init && SWITCH_X0_OFF && !x_running){
+    if(SWITCH_Z1_ON && !init && SWITCH_X0_OFF && !x_running){
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2048); //Al 50% DutyCyle
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
         x_running = true;
-    } else if (SWITCH_Z0_ON && !init && SWITCH_X0_ON && !x_homed) {
+    } else if (SWITCH_Z1_ON && !init && SWITCH_X0_ON && !x_homed) {
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0); 
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
         x_homed = true;
     }
-    if(SWITCH_Z0_ON && !init && SWITCH_Y0_OFF && !y_running){
+    if(SWITCH_Z1_ON && !init && SWITCH_Y0_OFF && !y_running){
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 2048); //Al 50% DutyCyle
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
         y_running = true;
-    } else if (SWITCH_Z0_ON && !init && SWITCH_Y0_ON && !y_homed) {
+    } else if (SWITCH_Z1_ON && !init && SWITCH_Y0_ON && !y_homed) {
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0); 
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
         y_homed = true;
