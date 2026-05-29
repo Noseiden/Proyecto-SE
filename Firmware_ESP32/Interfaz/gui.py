@@ -18,7 +18,7 @@ class Application(ttk.Frame):
         self.logReport.logger.info("init GUI")
         self.frame = None
         self.imgTk = None # Video
-        self.step = 0 #Pasos para dar en los eje X, Y, Z
+        self.step = 300 # mm/min para dar en los eje X, Y, Z
         self.master = master
 
         self.master.attributes("-fullscreen", True)
@@ -49,7 +49,7 @@ class Application(ttk.Frame):
         self.labelTime_e = self.widgetText("", 10, 790, 645)
         self.labelError = self.widgetText("ERROR: ", 11, 920, 645)
         self.labelStep = self.widgetText(f"Step: {self.step}", 12, 970, 430)
-        self.widgetText("mm/min", 10, 1040, 432)
+        self.widgetText("mm/min", 10, 1050, 432)
 
         self.showVideo()
         print("Start Video")
