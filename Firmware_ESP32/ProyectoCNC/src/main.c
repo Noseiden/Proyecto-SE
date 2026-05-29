@@ -256,6 +256,12 @@ void app_main(void) {
                 if(home(false) == true){
                     current_state = STATE_IDLE;
                 }
+                if(SWITCH_Z1_OFF){ //Si el sensor Z1 se deja de presionar, los motores X y Y no se moverán más
+                    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+                    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+                    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
+                    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+                }
                 break;
             case STATE_RUNNING:
                 if(make_a_circle(false, false, -1) == true){
